@@ -1,6 +1,3 @@
-com\is1\proyecto\App.class
-com\is1\proyecto\models\Professor.class
-com\is1\proyecto\controllers\ProfessorController.class
-com\is1\proyecto\models\User.class
-com\is1\proyecto\models\Person.class
-com\is1\proyecto\config\DBConfigSingleton.class
+com/is1/proyecto/App.class
+com/is1/proyecto/models/User.class
+com/is1/proyecto/config/DBConfigSingleton.class

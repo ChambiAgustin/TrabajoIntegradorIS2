@@ -21,7 +21,8 @@ import java.util.Map; // Interfaz Map, utilizada para Map.of() o HashMap.
 // Importaciones de clases del proyecto
 import com.is1.proyecto.config.DBConfigSingleton; // Clase Singleton para la configuración de la base de datos.
 import com.is1.proyecto.models.User; // Modelo de ActiveJDBC que representa la tabla 'users'.
-
+import com.is1.proyecto.models.Person;
+import com.is1.proyecto.models.Professor;
 
 /**
  * Clase principal de la aplicación Spark.
@@ -94,6 +95,21 @@ public class App {
             return new ModelAndView(model, "user_form.mustache");
         }, new MustacheTemplateEngine()); // Especifica el motor de plantillas para esta ruta.
 
+        get("/professor/create", (req, res) -> {
+            Map<String, Object> model2 = new HashMap<>();
+
+            String successMensage2 = req.queryParams("menssage");
+            if(successMensage2 != null && !successMensage2.isEmpty()) 
+                model2.put("successMensage", successMensage2);
+
+            String errorMensage = req.queryParams("error");
+            if(errorMensage != null && !errorMensage.isEmpty())
+                model2.put("errorMensage", errorMensage);
+
+            return new ModelAndView(model2, "profesor_form.mustache");
+            
+        }, new MustacheTemplateEngine());
+
         // GET: Ruta para mostrar el dashboard (panel de control) del usuario.
         // Requiere que el usuario esté autenticado.
         get("/dashboard", (req, res) -> {
@@ -157,6 +173,9 @@ public class App {
             return new ModelAndView(new HashMap<>(), "user_form.mustache"); // No pasa un modelo específico, solo el formulario.
         }, new MustacheTemplateEngine()); // Especifica el motor de plantillas para esta ruta.
 
+        get("/professor/new", (req, res) -> {
+            return new ModelAndView(new HashMap<>(), "profesor_form.mustache");
+        }, new MustacheTemplateEngine());
 
         // --- Rutas POST para manejar envíos de formularios y APIs ---
 
@@ -199,6 +218,47 @@ public class App {
             }
         });
 
+        post("/professor/new", (req, res) -> {
+            String name = req.queryParams("nombre");
+            String surname = req.queryParams("apellido");
+            String direccion = req.queryParams("direccion");
+            int dni = Integer.parseInt(req.queryParams("dni"));
+            int legajo = Integer.parseInt(req.queryParams("legajo"));
+            String cargo = req.queryParams("cargo");
+            String mail = req.queryParams("mail");
+            int telefono = Integer.parseInt(req.queryParams("telefono"));
+
+            if(dni == 0 || legajo == 0 || name == null || surname == null || mail == null || cargo == null){
+                res.status(400);
+                res.redirect("/proffessor/create?error=Dni, Name, surname, Legajo, Mail y Cargo son requeridos.");
+                return "";
+            }
+
+            try{
+                Professor pr = new Professor();
+                pr.set("nombre", name);
+                pr.set("apellido", surname);
+                pr.set("direccion", direccion);
+                pr.set("dni", dni);
+                pr.set("legajo", legajo);
+                pr.set("cargo", cargo);
+                pr.set("mail", mail);
+                pr.set("tel", telefono);
+                pr.saveIt();
+
+                res.status(201);
+                res.rediredct("/professor/create?menssage=Professor registrado con exito: " + name + " " + surname );
+                return "";
+
+            }catch(Exception e){
+                System.err.println("Error al registrar el profesor: " + e.getMessage());
+                e.printStackTrace();
+                res.status(500);
+                res.redirect("/profesor/create?error=Error interno al registrar el profesor. Intente de nuevo.");
+                return "";
+            }
+
+        });
 
         // POST: Maneja el envío del formulario de inicio de sesión.
         post("/login", (req, res) -> {
@@ -294,6 +354,46 @@ public class App {
                 return objectMapper.writeValueAsString(Map.of("error", "Error interno al registrar usuario: " + e.getMessage()));
             }
         });
+
+        post("/add_professors", (req, res) -> {
+            res.type("application/json");
+
+            String nombre = req.queryParams("nombre");
+            String apellido = req.queryParams("apellido");
+            String direccion = req.queryParams("direccion");
+            int dni = Integer.parseInt(req.queryParams("dni"));
+            int legajo = Integer.parseInt(req.queryParams("legajo"));
+            String cargo = req.queryParams("cargo");
+            String mail = req.queryParams("mail");
+            int telefono = Integer.parseInt(req.queryParams("telefono"));
+
+            if(nombre == null || nombre.isEmpty() || apellido == null || apellido.isEmpty() || dni == 0 || legajo == 0 || mail == null || mail.isEmpty() || cargo == null || cargo.isEmpty()){
+                res.status(400);
+                return objectMapper.writeValueAsString(Map.of("error", "Nombre, Apellido, Dni, Legajo, Mail y Cargo son requeridos."));
+            }
+
+            try{
+                Professor newProfessor = new Professor();
+                newProfessor.set("nombre", nombre);
+                newProfessor.set("apellido", apellido);
+                newProfessor.set("direccion", direccion);
+                newProfessor.set("dni", dni);
+                newProfessor.set("legajo", legajo);
+                newProfessor.set("cargo", cargo);
+                newProfessor.set("mail", mail);
+                newProfessor.set("tel", telefono);
+                newProfessor.saveIt();
+
+                res.status(201);
+                return objectMapper.writeValueAsString(Map.of("message", "Profesor '" + nombre + " " + apellido + "' registrado con éxito.", "id", newProfessor.getId()));
+
+            }catch(Exception e){
+                System.err.println("Error al registrar profesor: " + e.getMessage());
+                e.printStackTrace();
+                res.status(500);
+                return objectMapper.writeValueAsString(Map.of("error", "Error interno al registrar profesor: " + e.getMessage()));
+            }
+        }); 
 
         ProfessorController.registerRoutes(); // Registra las rutas del controlador de profesores.
 
