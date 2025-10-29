@@ -1,5 +1,7 @@
 package com.is1.proyecto; // Define el paquete de la aplicación, debe coincidir con la estructura de carpetas.
 
+
+import com.is1.proyecto.controllers.ProfessorController; // Importa todos los controladores del paquete controllers.
 // Importaciones necesarias para la aplicación Spark
 import com.fasterxml.jackson.databind.ObjectMapper; // Utilidad para serializar/deserializar objetos Java a/desde JSON.
 import static spark.Spark.*; // Importa los métodos estáticos principales de Spark (get, post, before, after, etc.).
@@ -36,7 +38,7 @@ public class App {
      * Aquí se configuran todas las rutas y filtros de Spark.
      */
     public static void main(String[] args) {
-        port(8080); // Configura el puerto en el que la aplicación Spark escuchará las peticiones (por defecto es 4567).
+        port(8081); // Configura el puerto en el que la aplicación Spark escuchará las peticiones (por defecto es 4567).
 
         // Obtener la instancia única del singleton de configuración de la base de datos.
         DBConfigSingleton dbConfig = DBConfigSingleton.getInstance();
@@ -292,6 +294,8 @@ public class App {
                 return objectMapper.writeValueAsString(Map.of("error", "Error interno al registrar usuario: " + e.getMessage()));
             }
         });
+
+        ProfessorController.registerRoutes(); // Registra las rutas del controlador de profesores.
 
     } // Fin del método main
 } // Fin de la clase App

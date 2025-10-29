@@ -1,10 +1,12 @@
 package com.is1.proyecto.models;
 
-
 import org.javalite.activejdbc.annotations.Table;
+import org.javalite.activejdbc.annotations.IdName;
 
 @Table("professors") // Esta anotación asocia explícitamente el modelo 'User' con la tabla 'users' en la DB.
-public class Professor extends Person {
+@IdName("id_prof") // Indica que la clave primaria se llama 'id_prof' en lugar de 'id'
+
+public class Professor extends Person {  //Hereda de Person (que ya es un Model)
 
     // ActiveJDBC mapea automáticamente las columnas de la tabla 'users'
     // (como 'id', 'name', 'password', etc.) a los atributos de esta clase.
@@ -14,37 +16,22 @@ public class Professor extends Person {
     // Opcional: Puedes agregar métodos getters y setters si prefieres un acceso más tipado,
     // aunque los métodos genéricos de Model (getString(), set(), getInteger(), etc.) ya funcionan.
 
-    private int legajo;
-    private String cargo;
-
-    public Professor(String m, int t, int d, String n, String a, String dir, int s, String c){
-        super(m, t, d, n, a, dir);
-        this.legajo = s;
-        this.cargo = c;
-    }
-
-    public String getName() {
-        return getString("name"); // Obtiene el valor de la columna 'name'
-    }
-
-    public void setName(String name) {
-        set("name", name); // Establece el valor para la columna 'name'
-    }
+    //Estos metodos ahora leeran y escribiran en las columnas 'legajo' y 'cargo' de la tabla 'professors'.
 
     public void setLegajo(int s){
-        this.legajo = s;
+        set("legajo", s); // Asigna el valor 's' para la columna 'legajo'
     }
 
     public void setCargo(String s){
-        this.cargo = s;
+        set("cargo", s); // Asigna el valor 's' para la columna 'cargo'
     }
 
     public int getLegajo(){
-        return legajo;
+        return getInteger("legajo"); // Obtiene el valor de la columna 'legajo'
     }
 
     public String getCargo(){
-        return cargo;
+        return getString("cargo"); // Obtiene el valor de la columna 'cargo'
     }
 
 }
