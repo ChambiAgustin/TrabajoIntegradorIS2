@@ -247,7 +247,7 @@ public class App {
                 pr.saveIt();
 
                 res.status(201);
-                res.rediredct("/professor/create?menssage=Professor registrado con exito: " + name + " " + surname );
+                res.redirect("/professor/create?menssage=Professor registrado con exito: " + name + " " + surname );
                 return "";
 
             }catch(Exception e){
