@@ -95,6 +95,7 @@ public class App {
             return new ModelAndView(model, "user_form.mustache");
         }, new MustacheTemplateEngine()); // Especifica el motor de plantillas para esta ruta.
 
+       
         get("/professor/create", (req, res) -> {
             Map<String, Object> model2 = new HashMap<>();
 
@@ -109,6 +110,8 @@ public class App {
             return new ModelAndView(model2, "profesor_form.mustache");
             
         }, new MustacheTemplateEngine());
+    
+
 
         // GET: Ruta para mostrar el dashboard (panel de control) del usuario.
         // Requiere que el usuario esté autenticado.
@@ -173,9 +176,12 @@ public class App {
             return new ModelAndView(new HashMap<>(), "user_form.mustache"); // No pasa un modelo específico, solo el formulario.
         }, new MustacheTemplateEngine()); // Especifica el motor de plantillas para esta ruta.
 
+     
         get("/professor/new", (req, res) -> {
             return new ModelAndView(new HashMap<>(), "profesor_form.mustache");
         }, new MustacheTemplateEngine());
+
+        
 
         // --- Rutas POST para manejar envíos de formularios y APIs ---
 
@@ -218,6 +224,7 @@ public class App {
             }
         });
 
+         
         post("/professor/new", (req, res) -> {
             String name = req.queryParams("nombre");
             String surname = req.queryParams("apellido");
@@ -259,6 +266,8 @@ public class App {
             }
 
         });
+
+       
 
         // POST: Maneja el envío del formulario de inicio de sesión.
         post("/login", (req, res) -> {

@@ -1,6 +1,7 @@
 package com.is1.proyecto.controllers; // 1. Definir el paquete
 
 // Importaciones necesarias
+import org.javalite.activejdbc.Base; // Para manejar la conexión a la base de datos
 import com.is1.proyecto.models.Person; // Importa el modelo Person
 import com.is1.proyecto.models.Professor; // Importa el modelo Professor
 import spark.ModelAndView; // Para renderizar vistas Mustache
@@ -8,6 +9,10 @@ import spark.template.mustache.MustacheTemplateEngine; // Motor de plantillas
 
 import java.util.HashMap; // Para crear el modelo de datos para la vista
 import java.util.Map; // Interfaz Map
+
+// --- ¡NUEVAS IMPORTACIONES PARA ARREGLAR EL ERROR 400! ---
+import java.net.URLEncoder; // Para codificar la URL
+import java.nio.charset.StandardCharsets; // Para decirle que use UTF-8
 
 import static spark.Spark.get; // Importa el método estático 'get' de Spark
 import static spark.Spark.post; // Importa el método estático 'post' de Spark
@@ -61,13 +66,17 @@ public class ProfessorController {
                 dniStr == null || dniStr.trim().isEmpty())
             {
                 // Si falta alguno, redirige DE VUELTA al formulario GET, pasando un mensaje de error en la URL
-                res.redirect("/profesor/new?error=Todos los campos son obligatorios.");
+                // ¡CORREGIDO! Usamos URLEncoder.encode para los acentos.
+                String mensaje = "Todos los campos son obligatorios.";
+                res.redirect("/profesor/new?error=" + URLEncoder.encode(mensaje, StandardCharsets.UTF_8));
                 return null; // Detiene la ejecución de esta ruta POST
             }
 
             // b) Formato de correo (validación simple)
             if (!correo.contains("@") || !correo.contains(".")) {
-                res.redirect("/profesor/new?error=Formato de correo electrónico inválido.");
+                // ¡CORREGIDO!
+                String mensaje = "Formato de correo electrónico inválido.";
+                res.redirect("/profesor/new?error=" + URLEncoder.encode(mensaje, StandardCharsets.UTF_8));
                 return null;
             }
 
@@ -76,7 +85,9 @@ public class ProfessorController {
             try {
                 dni = Integer.parseInt(dniStr.trim());
             } catch (NumberFormatException e) {
-                res.redirect("/profesor/new?error=El DNI debe ser un número.");
+                // ¡CORREGIDO!
+                String mensaje = "El DNI debe ser un número.";
+                res.redirect("/profesor/new?error=" + URLEncoder.encode(mensaje, StandardCharsets.UTF_8));
                 return null;
             }
 
@@ -87,11 +98,15 @@ public class ProfessorController {
             boolean mailExists = Person.count("mail = ?", correo) > 0; // Verifica si ya hay alguien con ese correo
 
             if (dniExists) {
-                res.redirect("/profesor/new?error=El DNI ingresado ya existe en el sistema.");
+                // ¡CORREGIDO!
+                String mensaje = "El DNI ingresado ya existe en el sistema.";
+                res.redirect("/profesor/new?error=" + URLEncoder.encode(mensaje, StandardCharsets.UTF_8));
                 return null;
             }
             if (mailExists) {
-                res.redirect("/profesor/new?error=El correo electrónico ingresado ya existe en el sistema.");
+                // ¡CORREGIDO!
+                String mensaje = "El correo electrónico ingresado ya existe en el sistema.";
+                res.redirect("/profesor/new?error=" + URLEncoder.encode(mensaje, StandardCharsets.UTF_8));
                 return null;
             }
 
@@ -121,17 +136,21 @@ public class ProfessorController {
                 // Ponemos valores por defecto para legajo y cargo
                 nuevoProfesor.setLegajo(0); // Podrías generar un legajo único o añadirlo al form
                 nuevoProfesor.setCargo("Docente"); // O añadirlo al form
-                nuevoProfesor.saveIt(); // ¡IMPORTANTE! Guarda el profesor en la tabla 'professors'.
+                Base.exec("INSERT INTO professors (id_prof, legajo, cargo) VALUES (?, ?, ?)", nuevaPersona.getId(), 0, "Docente");
 
                 // 4. REDIRIGIR CON MENSAJE DE ÉXITO
-                res.redirect("/profesor/new?message=Profesor '" + nombre + " " + apellido + "' registrado con éxito.");
+                // ¡CORREGIDO!
+                String mensaje = "Profesor '" + nombre + " " + apellido + "' registrado con éxito.";
+                res.redirect("/profesor/new?message=" + URLEncoder.encode(mensaje, StandardCharsets.UTF_8));
                 return null; // Detiene la ejecución
 
             } catch (Exception e) {
                 // 5. MANEJO DE ERRORES INESPERADOS (ej: error de BD)
                 System.err.println("Error al guardar profesor: " + e.getMessage());
                 e.printStackTrace(); // Imprime el detalle del error en la consola del servidor
-                res.redirect("/profesor/new?error=Ocurrió un error inesperado al guardar el profesor.");
+                // ¡CORREGIDO!
+                String mensaje = "Ocurrió un error inesperado al guardar el profesor.";
+                res.redirect("/profesor/new?error=" + URLEncoder.encode(mensaje, StandardCharsets.UTF_8));
                 return null;
             }
         }); // Fin de la ruta POST

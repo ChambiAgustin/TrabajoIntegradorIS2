@@ -27,8 +27,8 @@ DROP TABLE IF EXISTS professors;
 
 -- Crea la tabla 'professor' con los campos especificados
 CREATE TABLE professors(
-    id_prof INTEGER PRIMARY KEY AUTOINCREMENT,
-    legajo INTEGER NOT NULL UNIQUE,
+    id_prof INTEGER PRIMARY KEY,
+    legajo INTEGER NOT NULL,
     cargo VARCHAR(250) NOT NULL,
     CONSTRAINT fk_prof FOREIGN KEY (id_prof) REFERENCES persons(id_per) ON DELETE CASCADE
 );
