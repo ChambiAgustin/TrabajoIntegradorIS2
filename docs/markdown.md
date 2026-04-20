@@ -86,7 +86,7 @@ Ambos análisis resultan altamente exhaustivos y complementarios.
 La IA aportó una visión "de manual" enfocada en la arquitectura del software y las limitaciones tecnológicas. Por otra parte con el equipo tuvimos una visión pragmática e introspectiva de la nuestra realidad como equipo, reconociendo el desafío concreto de adoptar herramientas de IA y la importancia de estandarizar el entorno de trabajo.
 
 
-### 3. Diagramas de Arquitectura del sistema y diagrama de diseño
+## 3. Diagramas de Arquitectura del sistema y diagrama de diseño
 
 
 **Diagrama de Arquitectura del sistema:**
@@ -152,6 +152,80 @@ graph TD
     Controllers -->|6. Pasa modelo de datos| Views
     Views -->|7. Renderiza HTML plano| Cliente
 ```
+
+### Diagrama de Clases (Modelo de Dominio)
+Para dar soporte a las funcionalidades requeridas (Gestión de roles, Inscripciones, Aula Virtual, Reportes y Notificaciones), hemos diseñado el siguiente modelo de dominio. Este diagrama sirve como base directa para la creación de los Issues en nuestro Backlog.
+
+```mermaid
+classDiagram
+    %% Gestión de Accesos y Roles
+    class User {
+        +Integer id
+        +String username
+        +String password
+        +String role (Admin, Docente, Alumno)
+    }
+    class Person {
+        +Integer id_per
+        +Integer dni
+        +String nombre
+        +String apellido
+        +String mail
+    }
+    class Professor {
+        +Integer legajo
+        +String cargo
+    }
+    class Student {
+        +Integer matricula
+    }
+
+    %% Módulo de Inscripción y Planificación
+    class Subject {
+        +Integer id
+        +String nombre
+    }
+    class Commission {
+        +Integer id
+        +String horario
+    }
+    class Enrollment {
+        +Date fecha_inscripcion
+        +String estado
+    }
+
+    %% Aula Virtual, Comunicación y Seguimiento
+    class Message {
+        +String contenido
+        +Date fecha_envio
+    }
+    class Grade {
+        +Float calificacion
+        +String tipo (Practico, Teorico)
+        +Date fecha
+    }
+    
+    %% Sistema de Notificaciones
+    class Notification {
+        +String mensaje
+        +Boolean leida
+        +Date fecha
+    }
+
+    %% Relaciones
+    User "1" -- "1" Person : le pertenece a
+    Person <|-- Professor : es un
+    Person <|-- Student : es un
+    
+    Subject "1" *-- "*" Commission : tiene
+    Professor "1" -- "*" Commission : dicta
+    Student "*" -- "*" Commission : inscripto en (Enrollment)
+    
+    User "1" -- "*" Message : envía/recibe
+    Student "1" -- "*" Grade : obtiene
+    Commission "1" -- "*" Grade : registra
+    
+    User "1" -- "*" Notification : recibe
 
 
 ## 4. Gestión del Backlog e Issues (GitHub Projects)
@@ -238,7 +312,31 @@ A continuación, detallamos los Issues fundamentales del primer ciclo de desarro
 * **(SQA) Criterios de Aceptación:**
   * La ejecución de `mvn test` no interfiere con la base de datos de desarrollo (`dev.db`).
   * Existe al menos un test que verifique la restricción de unicidad del DNI al intentar guardar dos profesores iguales.
-  * 
+
+**Issue #7: Módulo de Alumnos e Inscripciones**
+* **Descripción:** Implementar el modelo `Student`, `Subject` y `Commission` según el diagrama de clases. Permitir a los docentes crear comisiones y a los alumnos inscribirse en ellas.
+* **Criterios de Aceptación:** * Las tablas se crean correctamente en SQLite. 
+  * Un alumno puede ver materias disponibles e inscribirse sin que la base de datos tire error de duplicidad.
+
+**Issue #8: Aula Virtual y Mensajería (Modelos `Message`)**
+* **Descripción:** Crear la lógica de backend para la comunicación privada. Un `User` logueado (rol Alumno) debe poder enviar un mensaje a un `User` (rol Docente).
+* **Criterios de Aceptación:**
+  * Endpoint POST para enviar mensaje guarda correctamente emisor, receptor y timestamp.
+  * Endpoint GET permite recuperar el hilo de conversación.
+
+**Issue #9: Seguimiento Educativo y Carga de Notas (Modelo `Grade`)**
+* **Descripción:** Desarrollar el ABM de calificaciones. Un Docente debe poder asociar una nota (práctico/teórico) a un `Student` dentro de una `Commission`.
+* **Criterios de Aceptación:**
+  * El formulario bloquea el acceso si el usuario no es Docente o Admin.
+  * Las notas se calculan y visualizan en una vista de tablero.
+
+**Issue #10: Sistema de Notificaciones Base**
+* **Descripción:** Crear el modelo `Notification` para registrar alertas simples en el sistema (ej. cuando se carga una nueva nota).
+* **Criterios de Aceptación:**
+  * Al guardar una nota (Issue #9), el sistema inserta automáticamente un registro en la tabla de notificaciones para el usuario afectado.
+  * La interfaz (navbar) muestra si hay notificaciones no leídas (booleano `leida = false`).
+
+---
 
 
 ## 5. (Estimation) Estimación del Backlog
