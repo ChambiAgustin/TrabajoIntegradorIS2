@@ -131,7 +131,7 @@ Estamos usando una variante del patrón MVC (Modelo-Vista-Controlador) adaptada 
 graph TD
     Cliente[Browser del Usuario]
 
-    subgraph Backend - Arquitectura MVC (Spark)
+    subgraph Backend ["Backend - Arquitectura MVC (Spark)"]
         Router(Enrutador<br/>App.java)
         Controllers(Controladores<br/>ej. ProfessorController)
         Models(Modelos ORM<br/>ej. User, Professor)
@@ -226,6 +226,7 @@ classDiagram
     Commission "1" -- "*" Grade : registra
     
     User "1" -- "*" Notification : recibe
+```
 
 
 ## 4. Gestión del Backlog e Issues (GitHub Projects)
