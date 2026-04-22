@@ -156,76 +156,118 @@ graph TD
 ### Diagrama de Clases (Modelo de Dominio)
 Para dar soporte a las funcionalidades requeridas (Gestión de roles, Inscripciones, Aula Virtual, Reportes y Notificaciones), hemos diseñado el siguiente modelo de dominio. Este diagrama sirve como base directa para la creación de los Issues en nuestro Backlog.
 
+
 ```mermaid
 classDiagram
+    direction TB
+ 
+    %% ============================================
     %% Gestión de Accesos y Roles
-    class User {
-        +Integer id
-        +String username
-        +String password
-        +String role (Admin, Docente, Alumno)
+    %% ============================================
+    class Usuario {
+        - id : int
+        - nombre_usuario : String
+        - contrasena : String
+        - TipoUsuario : Tipo_Usuario
     }
-    class Person {
-        +Integer id_per
-        +Integer dni
-        +String nombre
-        +String apellido
-        +String mail
+ 
+    class Tipo_Usuario {
+        <<enumeration>>
+        Administrador
+        Alumno
+        Docente
     }
-    class Professor {
-        +Integer legajo
-        +String cargo
+ 
+    class Persona {
+        - nombre : String
+        - apellido : String
+        - dni : int
+        - email : String
+        - telefono : String
     }
-    class Student {
-        +Integer matricula
+ 
+    class Alumno {
+        - legajo_estudiante : int
+        - ingresante : boolean
     }
-
-    %% Módulo de Inscripción y Planificación
-    class Subject {
-        +Integer id
-        +String nombre
+ 
+    class Docente {
+        - legajo_profesor : int
     }
-    class Commission {
-        +Integer id
-        +String horario
+ 
+    %% ============================================
+    %% Comunicación y Notificaciones
+    %% ============================================
+    class Mensaje {
+        - id : int
+        - contenido : String
+        - fechaEnvio : Date
+        - leido : boolean
     }
-    class Enrollment {
-        +Date fecha_inscripcion
-        +String estado
+ 
+    class Notificacion {
+        - contenido : String
+        - leida : boolean
+        - fecha : Date
     }
-
-    %% Aula Virtual, Comunicación y Seguimiento
-    class Message {
-        +String contenido
-        +Date fecha_envio
+ 
+    %% ============================================
+    %% Módulo Académico
+    %% ============================================
+    class Comision {
+        - horario : Date
     }
-    class Grade {
-        +Float calificacion
-        +String tipo (Practico, Teorico)
-        +Date fecha
+ 
+    class Materia {
+        - codigo_materia : int
+        - nombre_materia : int
+        - carga_horaria : int
+        - periodo_cursada : Date
     }
-    
-    %% Sistema de Notificaciones
-    class Notification {
-        +String mensaje
-        +Boolean leida
-        +Date fecha
+ 
+    class Evaluacion {
+        - nota_final : int
+        - fecha : Date
+        - codigo_evalucion : int
     }
-
-    %% Relaciones
-    User "1" -- "1" Person : le pertenece a
-    Person <|-- Professor : es un
-    Person <|-- Student : es un
-    
-    Subject "1" *-- "*" Commission : tiene
-    Professor "1" -- "*" Commission : dicta
-    Student "*" -- "*" Commission : inscripto en (Enrollment)
-    
-    User "1" -- "*" Message : envía/recibe
-    Student "1" -- "*" Grade : obtiene
-    Commission "1" -- "*" Grade : registra
-    
-    User "1" -- "*" Notification : recibe
+ 
+    class Inscripcion {
+        - periodo_inscripcion : Date
+        - codigo_inscripcion : int
+    }
+ 
+    class Cargo {
+        - Cargo_Asignado : String
+        - periodo_inicio : Date
+        - periodo_fin : Date
+    }
+ 
+    %% ============================================
+    %% Relaciones - Herencia (Persona)
+    %% ============================================
+    Persona <|-- Alumno
+    Persona <|-- Docente
+ 
+    %% Relaciones - Usuario y Persona
+    Persona "1" -- "1" Usuario : TIENE
+ 
+    %% Mensajería y Notificaciones
+    Usuario "2" -- "0..*" Mensaje : ENVIA/RECIBE
+    Usuario "1" -- "0..*" Notificacion : RECIBE
+ 
+    %% Núcleo académico: Comisión como nexo
+    Alumno "1..*" -- "0..*" Comision : PERTENECE
+    Docente "1..*" -- "0..*" Comision : DICTA
+    Materia "1" *-- "1..*" Comision : TIENE
+ 
+    %% Evaluación
+    Alumno "1" -- "0..*" Evaluacion : RINDE
+    Docente "1" -- "1..*" Evaluacion : EVALUA
+    Comision "1" -- "1..*" Evaluacion : SE RINDE
+ 
+    %% Clases de asociación
+    Alumno "1..*" -- "0..*" Materia : inscripto en (Inscripcion)
+    Docente "1..*" -- "1..*" Materia : asignado en (Cargo)
 ```
 
 
