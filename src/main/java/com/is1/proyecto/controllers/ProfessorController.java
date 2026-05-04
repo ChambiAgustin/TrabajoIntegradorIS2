@@ -4,6 +4,8 @@ package com.is1.proyecto.controllers; // 1. Definir el paquete
 import org.javalite.activejdbc.Base; // Para manejar la conexión a la base de datos
 import com.is1.proyecto.models.Person; // Importa el modelo Person
 import com.is1.proyecto.models.Professor; // Importa el modelo Professor
+import com.is1.proyecto.models.User; // Importa el modelo User
+import org.mindrot.jbcrypt.BCrypt; // Importa BCrypt para hashear la contraseña
 import spark.ModelAndView; // Para renderizar vistas Mustache
 import spark.template.mustache.MustacheTemplateEngine; // Motor de plantillas
 
@@ -56,6 +58,9 @@ public class ProfessorController {
             String apellido = req.queryParams("apellido");
             String correo = req.queryParams("correo");
             String dniStr = req.queryParams("dni"); // DNI viene como texto
+            String telefonoStr = req.queryParams("telefono");
+            String direccion = req.queryParams("direccion");
+            String cargo = req.queryParams("cargo");
 
             // 2. VALIDACIONES
 
@@ -120,23 +125,30 @@ public class ProfessorController {
                 nuevaPersona.setApellido(apellido.trim());
                 nuevaPersona.setMail(correo.trim());
                 nuevaPersona.setDni(dni);
-                // Ponemos valores por defecto para los campos no obligatorios en este formulario
-                nuevaPersona.setTel(0); // O podrías añadir el campo 'tel' al formulario
-                nuevaPersona.setDireccion("N/A"); // O podrías añadir el campo 'direccion'
+                
+                int telefono = (telefonoStr != null && !telefonoStr.trim().isEmpty()) ? Integer.parseInt(telefonoStr.trim()) : 0;
+                nuevaPersona.setTel(telefono); 
+                nuevaPersona.setDireccion((direccion != null && !direccion.trim().isEmpty()) ? direccion.trim() : "N/A"); 
                 nuevaPersona.saveIt(); // ¡IMPORTANTE! Guarda la persona en la tabla 'persons'. ActiveJDBC obtiene el id_per generado.
 
-                // b) Crear y guardar la entidad 'Professor' asociada
+                // b) Crear y guardar la cuenta de 'User' (Autogenerada)
+                User nuevoUser = new User();
+                nuevoUser.setName(dniStr.trim()); // Usuario = DNI
+                // Hashea el DNI para usarlo como contraseña inicial segura
+                nuevoUser.setPassword(BCrypt.hashpw(dniStr.trim(), BCrypt.gensalt()));
+                nuevoUser.setTipoUsuario("DOCENTE"); // Rol asignado
+                nuevoUser.setPersonId((Integer) nuevaPersona.getId()); // Vincula la cuenta con la persona
+                nuevoUser.saveIt();
+
+                // c) Crear y guardar la entidad 'Professor' asociada
                 Professor nuevoProfesor = new Professor();
                 // ¡CLAVE! Establecemos la clave primaria/foránea.
-                // ActiveJDBC es inteligente, al guardar Person, el ID ya está disponible con getId()
-                // Si tu PK/FK se llama id_prof, ActiveJDBC necesita que llames a set("id_prof", ...)
                 nuevoProfesor.setId(nuevaPersona.getId()); // Asigna el ID de la persona recién creada
-                // nuevoProfesor.set("id_prof", nuevaPersona.getId()); // Alternativa si @IdName("id_prof") no funciona bien
 
-                // Ponemos valores por defecto para legajo y cargo
-                nuevoProfesor.setLegajo(0); // Podrías generar un legajo único o añadirlo al form
-                nuevoProfesor.setCargo("Docente"); // O añadirlo al form
-                Base.exec("INSERT INTO professors (id_prof, legajo, cargo) VALUES (?, ?, ?)", nuevaPersona.getId(), 0, "Docente");
+                // Usamos el DNI como legajo provisorio para garantizar que sea único
+                nuevoProfesor.setLegajo(dni);
+                nuevoProfesor.setCargo((cargo != null && !cargo.trim().isEmpty()) ? cargo.trim() : "Docente");
+                nuevoProfesor.saveIt(); // Ahora podemos usar ActiveJDBC puro sin SQL explícito
 
                 // 4. REDIRIGIR CON MENSAJE DE ÉXITO
                 // ¡CORREGIDO!

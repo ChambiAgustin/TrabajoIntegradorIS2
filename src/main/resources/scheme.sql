@@ -1,17 +1,9 @@
--- Elimina la tabla 'users' si ya existe para asegurar un inicio limpio
+--- Elimina las tablas si ya existen para asegurar un inicio limpio (El orden de eliminación importa para evitar conflictos de Foreign Keys)
+DROP TABLE IF EXISTS professors;
 DROP TABLE IF EXISTS users;
-
--- Crea la tabla 'users' con los campos originales, adaptados para SQLite
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, -- Clave primaria autoincremental para SQLite
-    name TEXT NOT NULL UNIQUE,          -- Nombre de usuario (TEXT es el tipo de cadena recomendado para SQLite), con restricción UNIQUE
-    password TEXT NOT NULL           -- Contraseña hasheada (TEXT es el tipo de cadena recomendado para SQLite)
-);
-
---- Elimina la tabla 'persons' si ya existe para asegurar un inicio limpio
 DROP TABLE IF EXISTS persons;
 
--- Crea la tabla 'persons' con los campos especificados
+-- 1. Crea la tabla 'persons' PRIMERO, ya que es la entidad fuerte de la que dependen las demás
 CREATE TABLE persons(
     id_per INTEGER PRIMARY KEY AUTOINCREMENT,
     dni INTEGER NOT NULL UNIQUE,
@@ -22,14 +14,22 @@ CREATE TABLE persons(
     direccion VARCHAR(250) NOT NULL
 );
 
---Elimina la tabla 'professor' si ya existe para asegurar un inicio limpio
-DROP TABLE IF EXISTS professors;
+-- 2. Crea la tabla 'users' vinculada a persons
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,          
+    password TEXT NOT NULL,
+    -- Agregamos el rol para poder autorizar accesos en el Spark Router
+    tipo_usuario TEXT NOT NULL CHECK(tipo_usuario IN ('ADMINISTRADOR', 'ALUMNO', 'DOCENTE', 'DIRECTIVO')),
+    -- Relación 1 a 1 con la persona
+    person_id INTEGER UNIQUE,
+    CONSTRAINT fk_user_person FOREIGN KEY (person_id) REFERENCES persons(id_per) ON DELETE CASCADE
+);
 
--- Crea la tabla 'professor' con los campos especificados
+-- 3. Crea la tabla 'professors' vinculada a persons
 CREATE TABLE professors(
-    id_prof INTEGER PRIMARY KEY,
-    legajo INTEGER NOT NULL,
+    id_prof INTEGER PRIMARY KEY, -- Su ID principal es directamente el de la persona
+    legajo INTEGER NOT NULL UNIQUE,
     cargo VARCHAR(250) NOT NULL,
     CONSTRAINT fk_prof FOREIGN KEY (id_prof) REFERENCES persons(id_per) ON DELETE CASCADE
 );
-

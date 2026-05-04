@@ -44,6 +44,15 @@ public class App {
         // Obtener la instancia única del singleton de configuración de la base de datos.
         DBConfigSingleton dbConfig = DBConfigSingleton.getInstance();
 
+        // --- SEEDERS (Datos de prueba) ---
+        try {
+            Base.open(dbConfig.getDriver(), dbConfig.getDbUrl(), dbConfig.getUser(), dbConfig.getPass());
+            com.is1.proyecto.utils.Seeder.seed();
+            Base.close();
+        } catch (Exception e) {
+            System.err.println("Fallo al inicializar Seeders: " + e.getMessage());
+        }
+
         // --- Filtro 'before' para gestionar la conexión a la base de datos ---
         // Este filtro se ejecuta antes de cada solicitud HTTP.
         before((req, res) -> {
@@ -95,21 +104,7 @@ public class App {
             return new ModelAndView(model, "user_form.mustache");
         }, new MustacheTemplateEngine()); // Especifica el motor de plantillas para esta ruta.
 
-       
-        get("/professor/create", (req, res) -> {
-            Map<String, Object> model2 = new HashMap<>();
 
-            String successMensage2 = req.queryParams("menssage");
-            if(successMensage2 != null && !successMensage2.isEmpty()) 
-                model2.put("successMensage", successMensage2);
-
-            String errorMensage = req.queryParams("error");
-            if(errorMensage != null && !errorMensage.isEmpty())
-                model2.put("errorMensage", errorMensage);
-
-            return new ModelAndView(model2, "profesor_form.mustache");
-            
-        }, new MustacheTemplateEngine());
     
 
 
@@ -134,6 +129,7 @@ public class App {
 
             // 2. Si el usuario está logueado, añade el nombre de usuario al modelo para la plantilla.
             model.put("username", currentUsername);
+            model.put("tipo_usuario", req.session().attribute("tipoUsuario")); // Recupera el rol de la sesión
 
             // 3. Renderiza la plantilla del dashboard con el nombre de usuario.
             return new ModelAndView(model, "dashboard.mustache");
@@ -204,8 +200,15 @@ public class App {
                 // Hashea la contraseña de forma segura antes de guardarla.
                 String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
+                // Obtiene el tipo_usuario del form o asigna un default
+                String tipoUsuario = req.queryParams("tipo_usuario");
+                if (tipoUsuario == null || tipoUsuario.isEmpty()) {
+                    tipoUsuario = "ALUMNO"; // Por defecto, es alumno si no se especifica.
+                }
+
                 ac.set("name", name); // Asigna el nombre de usuario.
                 ac.set("password", hashedPassword); // Asigna la contraseña hasheada.
+                ac.set("tipo_usuario", tipoUsuario); // NUEVO: Asigna el rol
                 ac.saveIt(); // Guarda el nuevo usuario en la tabla 'users'.
 
                 res.status(201); // Código de estado HTTP 201 (Created) para una creación exitosa.
@@ -224,48 +227,7 @@ public class App {
             }
         });
 
-         
-        post("/professor/new", (req, res) -> {
-            String name = req.queryParams("nombre");
-            String surname = req.queryParams("apellido");
-            String direccion = req.queryParams("direccion");
-            int dni = Integer.parseInt(req.queryParams("dni"));
-            int legajo = Integer.parseInt(req.queryParams("legajo"));
-            String cargo = req.queryParams("cargo");
-            String mail = req.queryParams("mail");
-            int telefono = Integer.parseInt(req.queryParams("telefono"));
 
-            if(dni == 0 || legajo == 0 || name == null || surname == null || mail == null || cargo == null){
-                res.status(400);
-                res.redirect("/proffessor/create?error=Dni, Name, surname, Legajo, Mail y Cargo son requeridos.");
-                return "";
-            }
-
-            try{
-                Professor pr = new Professor();
-                pr.set("nombre", name);
-                pr.set("apellido", surname);
-                pr.set("direccion", direccion);
-                pr.set("dni", dni);
-                pr.set("legajo", legajo);
-                pr.set("cargo", cargo);
-                pr.set("mail", mail);
-                pr.set("tel", telefono);
-                pr.saveIt();
-
-                res.status(201);
-                res.redirect("/professor/create?menssage=Professor registrado con exito: " + name + " " + surname );
-                return "";
-
-            }catch(Exception e){
-                System.err.println("Error al registrar el profesor: " + e.getMessage());
-                e.printStackTrace();
-                res.status(500);
-                res.redirect("/profesor/create?error=Error interno al registrar el profesor. Intente de nuevo.");
-                return "";
-            }
-
-        });
 
        
 
@@ -306,12 +268,14 @@ public class App {
                 req.session(true).attribute("currentUserUsername", username); // Guarda el nombre de usuario en la sesión.
                 req.session().attribute("userId", ac.getId()); // Guarda el ID de la cuenta en la sesión (útil).
                 req.session().attribute("loggedIn", true); // Establece una bandera para indicar que el usuario está logueado.
+                req.session().attribute("tipoUsuario", ac.getString("tipo_usuario")); // NUEVO: Guardamos el rol en la sesión
 
-                System.out.println("DEBUG: Login exitoso para la cuenta: " + username);
+                System.out.println("DEBUG: Login exitoso para la cuenta: " + username + " (" + ac.getString("tipo_usuario") + ")");
                 System.out.println("DEBUG: ID de Sesión: " + req.session().id());
 
-
                 model.put("username", username); // Añade el nombre de usuario al modelo para el dashboard.
+                model.put("tipo_usuario", ac.getString("tipo_usuario")); // NUEVO: Para mostrar en la vista
+
                 // Renderiza la plantilla del dashboard tras un login exitoso.
                 return new ModelAndView(model, "dashboard.mustache");
             } else {
@@ -364,45 +328,7 @@ public class App {
             }
         });
 
-        post("/add_professors", (req, res) -> {
-            res.type("application/json");
 
-            String nombre = req.queryParams("nombre");
-            String apellido = req.queryParams("apellido");
-            String direccion = req.queryParams("direccion");
-            int dni = Integer.parseInt(req.queryParams("dni"));
-            int legajo = Integer.parseInt(req.queryParams("legajo"));
-            String cargo = req.queryParams("cargo");
-            String mail = req.queryParams("mail");
-            int telefono = Integer.parseInt(req.queryParams("telefono"));
-
-            if(nombre == null || nombre.isEmpty() || apellido == null || apellido.isEmpty() || dni == 0 || legajo == 0 || mail == null || mail.isEmpty() || cargo == null || cargo.isEmpty()){
-                res.status(400);
-                return objectMapper.writeValueAsString(Map.of("error", "Nombre, Apellido, Dni, Legajo, Mail y Cargo son requeridos."));
-            }
-
-            try{
-                Professor newProfessor = new Professor();
-                newProfessor.set("nombre", nombre);
-                newProfessor.set("apellido", apellido);
-                newProfessor.set("direccion", direccion);
-                newProfessor.set("dni", dni);
-                newProfessor.set("legajo", legajo);
-                newProfessor.set("cargo", cargo);
-                newProfessor.set("mail", mail);
-                newProfessor.set("tel", telefono);
-                newProfessor.saveIt();
-
-                res.status(201);
-                return objectMapper.writeValueAsString(Map.of("message", "Profesor '" + nombre + " " + apellido + "' registrado con éxito.", "id", newProfessor.getId()));
-
-            }catch(Exception e){
-                System.err.println("Error al registrar profesor: " + e.getMessage());
-                e.printStackTrace();
-                res.status(500);
-                return objectMapper.writeValueAsString(Map.of("error", "Error interno al registrar profesor: " + e.getMessage()));
-            }
-        }); 
 
         ProfessorController.registerRoutes(); // Registra las rutas del controlador de profesores.
 
