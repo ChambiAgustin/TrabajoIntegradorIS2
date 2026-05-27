@@ -30,4 +30,20 @@ public class User extends Model {
         set("password", password); // Establece el valor para la columna 'password'
     }
 
+    public String getTipoUsuario() {
+        return getString("tipo_usuario");
+    }
+
+    public void setTipoUsuario(String tipoUsuario) {
+        set("tipo_usuario", tipoUsuario);
+    }
+
+    public Integer getPersonId() {
+        return getInteger("person_id");
+    }
+
+    public void setPersonId(Integer personId) {
+        set("person_id", personId);
+    }
+
 }
