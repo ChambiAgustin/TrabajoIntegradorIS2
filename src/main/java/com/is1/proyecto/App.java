@@ -23,6 +23,14 @@ import com.is1.proyecto.config.DBConfigSingleton; // Clase Singleton para la con
 import com.is1.proyecto.models.User; // Modelo de ActiveJDBC que representa la tabla 'users'.
 import com.is1.proyecto.models.Person;
 import com.is1.proyecto.models.Professor;
+import com.is1.proyecto.models.Message;
+
+// Utilidades adicionales de Java
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Clase principal de la aplicación Spark.
@@ -176,7 +184,6 @@ public class App {
         get("/professor/new", (req, res) -> {
             return new ModelAndView(new HashMap<>(), "profesor_form.mustache");
         }, new MustacheTemplateEngine());
-
         
 
         // --- Rutas POST para manejar envíos de formularios y APIs ---
@@ -331,6 +338,8 @@ public class App {
 
 
         ProfessorController.registerRoutes(); // Registra las rutas del controlador de profesores.
+        com.is1.proyecto.controllers.MessageController.registerRoutes(); // Registra las rutas de mensajería
+
 
     } // Fin del método main
 } // Fin de la clase App
