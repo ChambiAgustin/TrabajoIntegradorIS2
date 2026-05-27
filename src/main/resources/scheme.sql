@@ -121,8 +121,10 @@ CREATE TABLE mensajes(
     leido BOOLEAN,
     id_emisor INTEGER,
     id_receptor INTEGER,
+    id_comision INTEGER,
     FOREIGN KEY (id_emisor) REFERENCES users(id),
-    FOREIGN KEY (id_receptor) REFERENCES users(id)
+    FOREIGN KEY (id_receptor) REFERENCES users(id),
+    FOREIGN KEY (id_comision) REFERENCES comisiones(id_comision)
 );
 -- Elimina la tabla 'notificaciones' si ya extiste para asegurar un inicio limpio
 DROP TABLE IF EXISTS notificaciones;
