@@ -1,6 +1,6 @@
 # Proyecto Ingeniería de Software II: Especificación, Gestión y Planificación
 
-**Integrantes:** Candela Sangroniz, Chambi Agustín, Gillo Celina
+**Integrantes:** Candela Sangroniz, Chambi Agustín, Gillo Celina, Oropeza Miazzo Jorge Amaru
 
 ## 1. Problema que se quiere resolver
 La institución carece de una plataforma unificada, intuitiva y accesible para la gestión académica y la comunicación. Los procesos descentralizados dificultan el seguimiento del rendimiento de los alumnos y docentes, y no existe un canal oficial y directo para la interacción dentro de las comisiones. Se requiere un sistema que centralice la información, mejore la experiencia de usuario (UX) y ofrezca herramientas de evaluación y comunicación segmentadas por roles.
