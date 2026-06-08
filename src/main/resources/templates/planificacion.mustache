@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{#isAdmin}}Planificación y Horarios{{/isAdmin}}{{^isAdmin}}Mis Horarios y Materias{{/isAdmin}} - Aula Virtual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-2 rounded-lg font-bold text-lg shadow-md shadow-blue-200">AV</span>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">Aula Virtual</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-slate-500">Conectado como <strong class="text-slate-800 font-semibold">{{currentUser}}</strong></span>
+                <a href="/dashboard" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition">Volver al Panel</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-6 md:p-8 flex flex-col md:flex-row gap-8">
+        
+        <!-- Left Column: Planning Forms -->
+        <section class="w-full md:w-5/12 flex flex-col space-y-6">
+            
+            <div class="flex flex-col space-y-2">
+                <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">
+                    {{#isAdmin}}Planificación Educativa{{/isAdmin}}
+                    {{^isAdmin}}Mis Materias y Horarios{{/isAdmin}}
+                </h2>
+                <p class="text-sm text-slate-500">
+                    {{#isAdmin}}Administra las materias de la institución y accede al detalle de cada asignatura para planificar sus comisiones y docentes.{{/isAdmin}}
+                    {{^isAdmin}}Consulta el listado de tus asignaturas asignadas y accede al detalle de comisiones y alumnos inscritos.{{/isAdmin}}
+                </p>
+            </div>
+
+            <!-- Alert messages -->
+            <div id="alerts-container" class="space-y-4">
+                {{#errorMessage}}
+                <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm shadow-sm flex items-center space-x-3">
+                    <span>⚠️</span>
+                    <span>{{errorMessage}}</span>
+                </div>
+                {{/errorMessage}}
+
+                {{#successMessage}}
+                <div class="bg-green-50 border border-green-200 text-green-700 p-4 rounded-xl text-sm shadow-sm flex items-center space-x-3">
+                    <span>✓</span>
+                    <span>{{successMessage}}</span>
+                </div>
+                {{/successMessage}}
+            </div>
+
+            <!-- Card for Docente description: Mis Materias -->
+        {{^isAdmin}}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                <span>📚</span> <span>Mis Materias</span>
+            </h3>
+            <p class="text-xs text-slate-500">Listado de asignaturas asignadas a tu cargo en la institución.</p>
+            
+            <div class="space-y-3 pt-2">
+                {{#misMaterias}}
+                <div class="bg-slate-50/70 border border-slate-100 rounded-xl p-3.5 flex justify-between items-center hover:shadow-sm transition">
+                    <div class="space-y-1 flex-grow pr-2">
+                        <h4 class="font-bold text-slate-900 text-xs flex items-center space-x-1.5">
+                            <span class="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded">{{codigo}}</span>
+                            <span class="truncate max-w-[150px] inline-block" title="{{nombre}}">{{nombre}}</span>
+                        </h4>
+                        <div class="text-[10px] text-slate-500 font-medium flex items-center space-x-2">
+                            <span>⏱️ {{carga_horaria}} horas</span>
+                            <span>•</span>
+                            <span class="bg-indigo-50 text-indigo-700 px-1 py-0.2 rounded font-semibold text-[9px]">{{periodo}}</span>
+                        </div>
+                    </div>
+                    <a href="/planificacion/materia/{{id_materia}}" 
+                       class="text-[10px] font-extrabold text-indigo-600 hover:text-indigo-800 transition bg-indigo-50 hover:bg-indigo-100/80 px-2.5 py-1.5 rounded-lg flex items-center space-x-0.5 whitespace-nowrap">
+                        <span>Ver</span> <span>&rarr;</span>
+                    </a>
+                </div>
+                {{/misMaterias}}
+                {{^hasMisMaterias}}
+                <div class="text-center text-slate-400 py-6">
+                    <span class="text-2xl block mb-1">🔍</span>
+                    <p class="text-xs">No tienes materias asignadas actualmente.</p>
+                </div>
+                {{/hasMisMaterias}}
+            </div>
+        </div>
+        {{/isAdmin}}
+
+            <!-- Form: Add Subject (Admins Only) -->
+            {{#isAdmin}}
+            <!-- Card: Enrollment Period (Admins Only) -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+                <h3 class="font-bold text-slate-900 text-base mb-2 flex items-center space-x-2">
+                    <span>📅</span> <span>Periodo de Inscripción a Materias</span>
+                </h3>
+                <p class="text-xs text-slate-500 mb-4">Habilita o deshabilita la inscripción de los estudiantes a materias desde su panel personal.</p>
+                
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4 gap-4">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Estado Actual</p>
+                        {{#inscripcionActiva}}
+                        <p class="text-sm font-bold text-emerald-600 flex items-center mt-1">
+                            <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full mr-2 animate-pulse"></span>
+                            Abierto ({{inscripcionAnio}} - {{inscripcionPeriodo}})
+                        </p>
+                        {{/inscripcionActiva}}
+                        {{^inscripcionActiva}}
+                        <p class="text-sm font-bold text-rose-600 flex items-center mt-1">
+                            <span class="w-2.5 h-2.5 bg-rose-500 rounded-full mr-2"></span>
+                            Periodo Cerrado
+                        </p>
+                        {{/inscripcionActiva}}
+                    </div>
+                    
+                    <form action="/planificacion/toggle-inscripcion" method="post" class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        {{#inscripcionActiva}}
+                        <input type="hidden" name="activa" value="false">
+                        <button type="submit" class="bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-semibold py-2 px-4 rounded-xl text-xs transition shadow-md shadow-rose-100 whitespace-nowrap">
+                            Cerrar Inscripción
+                        </button>
+                        {{/inscripcionActiva}}
+                        {{^inscripcionActiva}}
+                        <input type="hidden" name="activa" value="true">
+                        <input type="number" name="anio" value="2026" required min="2020" max="2050" class="w-20 border border-slate-200 rounded-xl px-2.5 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Año">
+                        <select name="periodo" required class="border border-slate-200 rounded-xl px-2.5 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="1° Cuatrimestre">1° Cuatrimestre</option>
+                            <option value="2° Cuatrimestre">2° Cuatrimestre</option>
+                        </select>
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold py-2 px-4 rounded-xl text-xs transition shadow-md shadow-emerald-100 whitespace-nowrap">
+                            Abrir Inscripción
+                        </button>
+                        {{/inscripcionActiva}}
+                    </form>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h3 class="font-bold text-slate-900 text-base mb-4 flex items-center space-x-2">
+                    <span>📚</span> <span>Registrar Nueva Materia (Curricular)</span>
+                </h3>
+                <form id="materia-form" action="/planificacion/materia" method="post" class="space-y-4">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="codigo" class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Código único:</label>
+                            <input type="text" id="codigo" name="codigo" placeholder="MAT-101" required
+                                   class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label for="nombre" class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Nombre Completo:</label>
+                            <input type="text" id="nombre" name="nombre" placeholder="Álgebra Lineal" required
+                                   class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label for="carga_horaria" class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Carga Horaria:</label>
+                            <input type="number" id="carga_horaria" name="carga_horaria" placeholder="4"
+                                   class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label for="periodo" class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Periodo:</label>
+                            <select id="periodo" name="periodo"
+                                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+                                <option value="1° Cuatrimestre">1° Cuatrimestre</option>
+                                <option value="2° Cuatrimestre">2° Cuatrimestre</option>
+                                <option value="Anual">Anual</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="anio" class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Año de Carrera:</label>
+                            <select id="anio" name="anio"
+                                    class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+                                <option value="1">1° Año</option>
+                                <option value="2">2° Año</option>
+                                <option value="3">3° Año</option>
+                                <option value="4">4° Año</option>
+                                <option value="5">5° Año</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 rounded-xl text-xs transition shadow-md">
+                        Dar de Alta Materia
+                    </button>
+                </form>
+            </div>
+            {{/isAdmin}}
+
+        </section>
+
+        <!-- Right Column: Plan de Estudios -->
+        <section class="flex-grow md:w-7/12 flex flex-col space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col h-full">
+                <h3 class="font-bold text-slate-900 text-lg mb-2 flex items-center space-x-2">
+                    <span>📋</span> <span>{{#isAdmin}}Plan de Estudio de la Carrera{{/isAdmin}}{{^isAdmin}}Cronogramas por Período Académico{{/isAdmin}}</span>
+                </h3>
+                <p class="text-xs text-slate-500 mb-6">
+                    {{#isAdmin}}Visualiza las materias organizadas por año académico y cuatrimestre. Haz click en una materia para gestionar sus comisiones y docentes.{{/isAdmin}}
+                    {{^isAdmin}}Accede al cronograma semanal de todas tus materias y comisiones correspondientes a cada período académico.{{/isAdmin}}
+                </p>
+                
+                <div id="plan-estudio-container" class="space-y-4 overflow-y-auto flex-1 pr-1">
+                    {{#isAdmin}}
+                    {{#planEstudio}}
+                    <!-- Accordion por Año -->
+                    <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <button type="button" onclick="toggleAccordion('year-{{anio}}')" 
+                                class="w-full flex justify-between items-center px-5 py-4 bg-slate-50 hover:bg-slate-100 transition text-left font-bold text-slate-800 text-sm focus:outline-none border-b border-slate-100">
+                            <span class="flex items-center space-x-2">
+                                <span class="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase">Año Lectivo</span>
+                                <span class="text-slate-900 font-extrabold">{{anio}}° Año</span>
+                            </span>
+                            <span id="icon-year-{{anio}}" class="transform transition-transform duration-200 text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </span>
+                        </button>
+                        
+                        <div id="year-{{anio}}" class="p-5 space-y-6 bg-white hidden">
+                            {{#periodos}}
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                        <h4 class="text-xs font-extrabold text-indigo-900 uppercase tracking-wider">{{periodoNombre}}</h4>
+                                    </div>
+                                    <a href="/planificacion/cronograma/{{anio}}/{{periodoNombre}}" 
+                                       class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition flex items-center space-x-1">
+                                        <span>📅</span> <span>{{#isAdmin}}Gestionar comisiones{{/isAdmin}}{{^isAdmin}}Ver cronograma{{/isAdmin}}</span>
+                                    </a>
+                                </div>
+                                
+                                <div class="space-y-3">
+                                    {{#materias}}
+                                    <div class="bg-slate-50/70 border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:shadow-md transition">
+                                        <div class="space-y-1">
+                                            <h5 class="font-bold text-slate-900 text-sm tracking-tight flex items-center space-x-2">
+                                                <span class="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded">{{codigo}}</span>
+                                                <span>{{nombre}}</span>
+                                            </h5>
+                                            <div class="flex items-center space-x-3 text-xs text-slate-500">
+                                                <span>⏱️ {{carga_horaria}} horas</span>
+                                                <span>•</span>
+                                                <span class="font-medium {{#hasComisiones}}text-green-600 bg-green-50 px-1.5 py-0.5 rounded{{/hasComisiones}}{{^hasComisiones}}text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded{{/hasComisiones}}">
+                                                    {{comisionesText}}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <a href="/planificacion/materia/{{id_materia}}" 
+                                           class="w-full md:w-auto text-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
+                                            {{#isAdmin}}Gestionar materia{{/isAdmin}}
+                                            {{^isAdmin}}Ver docentes{{/isAdmin}} &rarr;
+                                        </a>
+                                    </div>
+                                    {{/materias}}
+                                </div>
+                            </div>
+                            {{/periodos}}
+                        </div>
+                    </div>
+                    {{/planEstudio}}
+                    
+                    {{^hasPlanEstudio}}
+                    <div class="text-center text-slate-400 py-12">
+                        <span class="text-3xl block mb-2">📚</span>
+                        <p class="text-xs">No hay materias registradas en el Plan de Estudio.</p>
+                    </div>
+                    {{/hasPlanEstudio}}
+                    {{/isAdmin}}
+
+                    {{^isAdmin}}
+                    <div class="space-y-5">
+                        {{#periodosDocente}}
+                        <div class="bg-slate-50/70 border border-slate-200 rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-md transition">
+                            <div class="space-y-1.5">
+                                <h4 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                                    <span>{{periodoNombre}}</span>
+                                </h4>
+                                <p class="text-xs text-slate-500">
+                                    {{#hasComisiones}}
+                                    <span class="text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full font-bold text-[10px]">{{comisionesText}}</span>
+                                    {{/hasComisiones}}
+                                    {{^hasComisiones}}
+                                    <span class="text-slate-450 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full font-bold text-[10px]">Sin comisiones asignadas</span>
+                                    {{/hasComisiones}}
+                                </p>
+                            </div>
+                            <a href="/planificacion/periodo/{{periodoNombre}}/cronograma" 
+                               class="w-full sm:w-auto text-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow-md shadow-indigo-150/40 flex items-center justify-center space-x-1.5">
+                                <span>📅</span> <span>Ver cronograma</span>
+                            </a>
+                        </div>
+                        {{/periodosDocente}}
+                    </div>
+                    {{/isAdmin}}
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 px-6 text-center text-xs text-slate-500">
+        <p>&copy; 2026 Aula Virtual - Trabajo Integrador IS2.</p>
+    </footer>
+
+    <script>
+        // Toggle year accordion visibility
+        function toggleAccordion(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            if (!content) return;
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                content.classList.add('block');
+                if (icon) icon.classList.add('rotate-180');
+            } else {
+                content.classList.remove('block');
+                content.classList.add('hidden');
+                if (icon) icon.classList.remove('rotate-180');
+            }
+        }
+
+        // Handle materia creation form asynchronously to avoid a full page reset
+        const materiaForm = document.getElementById('materia-form');
+        if (materiaForm) {
+            materiaForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const form = e.target;
+                const formData = new FormData(form);
+                const params = new URLSearchParams(formData);
+                
+                // Active loading state on submit button
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>⏳</span> <span>Registrando...</span>';
+                
+                fetch(form.action, {
+                    method: 'POST',
+                    body: params,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                })
+                .then(response => {
+                    // Fetch the redirection page content
+                    return fetch(response.url || '/planificacion');
+                })
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Update the subjects list section
+                    const newPlanEstudio = doc.getElementById('plan-estudio-container');
+                    const oldPlanEstudio = document.getElementById('plan-estudio-container');
+                    if (newPlanEstudio && oldPlanEstudio) {
+                        oldPlanEstudio.innerHTML = newPlanEstudio.innerHTML;
+                    }
+                    
+                    // Update the status alerts
+                    const newAlerts = doc.getElementById('alerts-container');
+                    const oldAlerts = document.getElementById('alerts-container');
+                    if (newAlerts && oldAlerts) {
+                        oldAlerts.innerHTML = newAlerts.innerHTML;
+                        // Auto-scroll to alert messages so user can see feedback
+                        oldAlerts.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                    
+                    // Reset the form input fields
+                    form.reset();
+                    
+                    // Auto-expand the accordion of the year where the subject was added
+                    const addedAnio = formData.get('anio');
+                    if (addedAnio) {
+                        const accordionContent = document.getElementById('year-' + addedAnio);
+                        if (accordionContent) {
+                            accordionContent.classList.remove('hidden');
+                            accordionContent.classList.add('block');
+                            const icon = document.getElementById('icon-year-' + addedAnio);
+                            if (icon) icon.classList.add('rotate-180');
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Error al registrar la materia: ' + err.message);
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                });
+            });
+        }
+    </script>
+
+</body>
+</html>

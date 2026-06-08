@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{#isAdmin}}Gestionar Comisiones{{/isAdmin}}{{^isAdmin}}Ver cronograma{{/isAdmin}} - Aula Virtual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-3.5 shadow-sm">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-2 rounded-lg font-bold text-lg shadow-md shadow-blue-200">AV</span>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">Aula Virtual</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-slate-500">Conectado como <strong class="text-slate-800 font-semibold">{{currentUser}}</strong></span>
+                <a href="/planificacion" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition">&larr; Volver al Plan de Estudio</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col space-y-6">
+        
+        <!-- Header Section -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="space-y-1">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-indigo-100 text-indigo-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        {{^isUnifiedPeriodView}}{{anio}}° Año • {{/isUnifiedPeriodView}}{{periodo}}
+                    </span>
+                    <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded">
+                        {{#isAdmin}}Gestión e Integración de Horarios{{/isAdmin}}
+                        {{^isAdmin}}Mi Agenda de Clases{{/isAdmin}}
+                    </span>
+                </div>
+                <h2 class="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">
+                    {{#isAdmin}}Gestionar Comisiones{{/isAdmin}}
+                    {{^isAdmin}}Ver cronograma{{/isAdmin}}
+                </h2>
+                <p class="text-xs text-slate-500">
+                    {{#isAdmin}}Planifica comisiones, asigna horarios semanales y comprueba de forma automática y visual que no haya superposiciones de clases.{{/isAdmin}}
+                    {{^isAdmin}}Consulta tus horarios semanales asignados de clases para el año lectivo y período correspondientes.{{/isAdmin}}
+                </p>
+            </div>
+            
+            <a href="/planificacion" class="text-slate-655 hover:text-slate-900 font-medium text-xs flex items-center space-x-1.5 transition">
+                <span>&larr;</span> <span>Volver a Planificación</span>
+            </a>
+        </div>
+
+        <!-- Alerts -->
+        {{#errorMessage}}
+        <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs shadow-sm flex items-center space-x-3">
+            <span>⚠️</span>
+            <span>{{errorMessage}}</span>
+        </div>
+        {{/errorMessage}}
+
+        {{#successMessage}}
+        <div class="bg-green-50 border border-green-200 text-green-700 p-4 rounded-xl text-xs shadow-sm flex items-center space-x-3">
+            <span>✓</span>
+            <span>{{successMessage}}</span>
+        </div>
+        {{/successMessage}}
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Left Column: Commission switcher and form -->
+            <aside class="lg:col-span-4 flex flex-col space-y-6">
+                
+                <!-- Box 1: Selector de Comisión & Status -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="space-y-1">
+                            <h3 class="font-extrabold text-slate-900 text-base flex items-center space-x-2">
+                                <span>📅</span> <span>{{#isAdmin}}{{selectedComision}}{{/isAdmin}}{{^isAdmin}}Mis Horarios Semanales{{/isAdmin}}</span>
+                            </h3>
+                            <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">Horario de cursada semanal</p>
+                        </div>
+                        {{#isAdmin}}
+                        <form action="/planificacion/comision/eliminar" method="post" onsubmit="return confirm('¿Seguro que deseas eliminar la {{selectedComision}} completa? Esto quitará todas las materias asociadas, asignaciones docentes e inscripciones de alumnos en esta comisión.')" class="inline">
+                            <input type="hidden" name="nombre" value="{{selectedComision}}">
+                            <input type="hidden" name="anio" value="{{anio}}">
+                            <input type="hidden" name="periodo" value="{{periodo}}">
+                            <button type="submit" class="bg-red-50 hover:bg-red-100 border border-red-200 text-red-650 hover:text-red-700 text-[10px] font-bold px-2.5 py-1 rounded-lg transition flex items-center space-x-1 shadow-sm" title="Eliminar comisión completa">
+                                <span>🗑️</span> <span>Eliminar</span>
+                            </button>
+                        </form>
+                        {{/isAdmin}}
+                    </div>
+
+                    {{#isAdmin}}
+                    <div class="flex flex-col space-y-2 pt-3 border-t border-slate-100">
+                        <label for="comisionSelector" class="text-xs font-bold text-slate-650 uppercase tracking-wide">Seleccionar Comisión:</label>
+                        <select id="comisionSelector" onchange="cambiarComision(this.value)" 
+                                class="w-full border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm cursor-pointer text-slate-705">
+                            {{#comisionOptions}}
+                            <option value="{{nombre}}" {{#selected}}selected{{/selected}}>{{nombre}}</option>
+                            {{/comisionOptions}}
+                            <option value="ADD_NEW" class="text-indigo-600 font-extrabold font-bold">+ Agregar Comisión</option>
+                        </select>
+                    </div>
+                    {{/isAdmin}}
+
+                    <!-- Alertas de estado de conflicto -->
+                    <div class="pt-2">
+                        {{#hasConflict}}
+                        <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-800 flex items-start space-x-2.5 shadow-sm">
+                            <span class="text-base">⚠️</span>
+                            <div>
+                                <span class="font-bold block text-sm">Superposición Detectada</span>
+                                <span class="mt-0.5 block leading-normal text-[11px] text-red-700">Existen materias colisionando en horarios o por asignación del mismo docente (marcadas en rojo). Modifica los horarios o los docentes asignados.</span>
+                            </div>
+                        </div>
+                        {{/hasConflict}}
+                        {{^hasConflict}}
+                        <div class="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800 flex items-start space-x-2.5 shadow-sm">
+                            <span class="text-base">✓</span>
+                            <div>
+                                <span class="font-bold block text-sm">Horarios sin Conflictos</span>
+                                <span class="mt-0.5 block leading-normal text-[11px] text-green-700">No se detectaron superposiciones horarias en esta comisión.</span>
+                            </div>
+                        </div>
+                        {{/hasConflict}}
+                    </div>
+                </div>
+
+                <!-- Box 2: Form: Agregar Materia al Cronograma / Editar Comisión (Admins Only) -->
+                {{#isAdmin}}
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+                    <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                        <span>🕒</span> <span id="form-title">Agregar Materia a la {{selectedComision}}</span>
+                    </h3>
+                    
+                    {{#hasMaterias}}
+                    <form id="comision-form" action="/planificacion/comision" method="post" class="space-y-4">
+                        <div>
+                            <label for="id_materia" class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">Materia:</label>
+                            <select id="id_materia" name="id_materia" required
+                                    class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none bg-white text-slate-700 font-medium cursor-pointer">
+                                <option value="">Selecciona una materia...</option>
+                                {{#materiasList}}
+                                <option value="{{id_materia}}" data-added="{{#isAdded}}true{{/isAdded}}{{^isAdded}}false{{/isAdded}}">[{{codigo}}] {{nombre}}</option>
+                                {{/materiasList}}
+                            </select>
+                        </div>
+
+                        <input type="hidden" id="nombre" name="nombre" value="{{selectedComision}}">
+
+                        <div class="space-y-3">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wide">Días y Horarios:</label>
+                            <div id="horarios-container" class="space-y-2">
+                                <!-- La primera fila siempre está presente -->
+                                <div class="horario-row flex gap-1.5 items-center bg-slate-50 border border-slate-200 p-2 rounded-lg">
+                                    <div class="flex-grow grid grid-cols-3 gap-1">
+                                        <div>
+                                            <select name="dias[]" required class="w-full border border-slate-200 rounded p-1 text-[10px] bg-white focus:outline-none cursor-pointer">
+                                                <option value="Lunes">Lunes</option>
+                                                <option value="Martes">Martes</option>
+                                                <option value="Miércoles">Miércoles</option>
+                                                <option value="Jueves">Jueves</option>
+                                                <option value="Viernes">Viernes</option>
+                                                <option value="Sábado">Sábado</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <select name="inicios[]" required class="w-full border border-slate-200 rounded p-1 text-[10px] bg-white focus:outline-none cursor-pointer">
+                                                <option value="08:00">08:00</option>
+                                                <option value="09:00">09:00</option>
+                                                <option value="10:00">10:00</option>
+                                                <option value="11:00">11:00</option>
+                                                <option value="12:00">12:00</option>
+                                                <option value="13:00">13:00</option>
+                                                <option value="14:00">14:00</option>
+                                                <option value="15:00">15:00</option>
+                                                <option value="16:00">16:00</option>
+                                                <option value="17:00">17:00</option>
+                                                <option value="18:00" selected>18:00</option>
+                                                <option value="19:00">19:00</option>
+                                                <option value="20:00">20:00</option>
+                                                <option value="21:00">21:00</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <select name="fines[]" required class="w-full border border-slate-200 rounded p-1 text-[10px] bg-white focus:outline-none cursor-pointer">
+                                                <option value="09:00">09:00</option>
+                                                <option value="10:00">10:00</option>
+                                                <option value="11:00">11:00</option>
+                                                <option value="12:00">12:00</option>
+                                                <option value="13:00">13:00</option>
+                                                <option value="14:00">14:00</option>
+                                                <option value="15:00">15:00</option>
+                                                <option value="16:00">16:00</option>
+                                                <option value="17:00">17:00</option>
+                                                <option value="18:00">18:00</option>
+                                                <option value="19:00">19:00</option>
+                                                <option value="20:00" selected>20:00</option>
+                                                <option value="21:00">21:00</option>
+                                                <option value="22:00">22:00</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="w-4"></div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="agregarHorarioRow()" class="w-full border border-dashed border-indigo-300 hover:border-indigo-400 text-indigo-600 hover:text-indigo-700 bg-indigo-50/30 hover:bg-indigo-50/50 py-1.5 rounded-lg text-[10px] font-semibold transition flex items-center justify-center space-x-1">
+                                <span>➕</span> <span>Agregar Día y Horario</span>
+                            </button>
+                        </div>
+                        <div class="flex flex-col space-y-2">
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-xl text-xs transition shadow-md">
+                                Guardar Comisión
+                            </button>
+                            <button id="cancel-edit-btn" type="button" onclick="cancelarEdicion()" class="w-full border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold py-1.5 rounded-xl text-xs transition hidden">
+                                Cancelar Edición
+                            </button>
+                        </div>
+                    </form>
+                    {{/hasMaterias}}
+                    {{^hasMaterias}}
+                    <p class="text-xs text-slate-400 italic py-2 text-center">Registra materias para este año y periodo académico primero para poder agregarlas al cronograma.</p>
+                    {{/hasMaterias}}
+                </div>
+                {{/isAdmin}}
+
+            </aside>
+
+            <!-- Right Column: Planned Commissions List -->
+            <section class="lg:col-span-8 flex flex-col space-y-6">
+                
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <div class="space-y-1">
+                            <h3 class="font-extrabold text-slate-900 text-base flex items-center space-x-2">
+                                <span>📋</span> <span>Materias Planificadas</span>
+                            </h3>
+                            <p class="text-xs text-slate-400 font-medium">Lista de materias, horarios y docentes en la {{selectedComision}}</p>
+                        </div>
+                    </div>
+
+                    {{#hasPlannedCommissions}}
+                    <div class="divide-y divide-slate-150 space-y-4">
+                        {{#plannedCommissions}}
+                        <div class="pt-4 first:pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <!-- Left: Subject Info and Schedule -->
+                            <div class="space-y-2 flex-grow">
+                                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                                    <span class="text-[9px] font-extrabold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                        {{subjectCode}}
+                                    </span>
+                                    {{#subjectYear}}
+                                    <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100">
+                                        {{subjectYear}}° Año
+                                    </span>
+                                    {{/subjectYear}}
+                                    <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                                        {{comisionNombre}}
+                                    </span>
+                                </div>
+                                
+                                <h4 class="font-extrabold text-slate-900 text-sm tracking-tight leading-snug">{{subjectName}}</h4>
+                                
+                                <div class="text-xs text-indigo-650 font-bold flex items-center pt-0.5">
+                                    <span class="mr-1.5">🕒</span> {{horarioRaw}}
+                                </div>
+
+                                <!-- Conflict Area -->
+                                {{#hasConflict}}
+                                <div class="mt-2.5 bg-red-50 border border-red-200 rounded-xl p-3 text-red-800 text-[11px] leading-normal space-y-1 max-w-xl font-medium">
+                                    <span class="font-bold flex items-center text-xs text-red-900">
+                                        {{#isTeacherConflict}}⚠️ Superposición Docente{{/isTeacherConflict}}
+                                        {{^isTeacherConflict}}⚠️ Superposición Horaria{{/isTeacherConflict}}
+                                    </span>
+                                    <div class="text-[10.5px] text-red-700 font-semibold">
+                                        Conflicto detectado con las siguientes materias:
+                                    </div>
+                                    <ul class="list-disc pl-4 space-y-0.5 text-[10.5px] text-red-800 font-medium">
+                                        {{#conflicts}}
+                                        <li>
+                                            <strong>[{{subjectCode}}] {{subjectName}}</strong> ({{anioMateria}}° Año • {{comisionNombre}}): {{timeStr}}
+                                            {{#teacherName}} - Docente: {{teacherName}}{{/teacherName}}
+                                        </li>
+                                        {{/conflicts}}
+                                    </ul>
+                                </div>
+                                {{/hasConflict}}
+                            </div>
+
+                            <!-- Right: Teacher Assignment Selector & Actions -->
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3.5 flex-shrink-0">
+                                <div class="w-full sm:w-auto">
+                                    {{#isAdmin}}
+                                    <form action="/planificacion/asignar-docente" method="post" class="flex flex-col">
+                                        <input type="hidden" name="id_comision" value="{{idComision}}">
+                                        <input type="hidden" name="redirect_url" value="/planificacion/cronograma/{{anio}}/{{periodoEncoded}}">
+                                        
+                                        <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Asignar Docente</label>
+                                        <select name="id_prof" onchange="this.form.submit()" 
+                                                class="border border-slate-200 bg-white rounded-xl px-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm cursor-pointer text-slate-705 w-52">
+                                            {{#teachersList}}
+                                            <option value="{{id_prof}}" {{#selected}}selected{{/selected}}>
+                                                {{#apellido}}{{apellido}}, {{nombre}}{{/apellido}}
+                                                {{^apellido}}{{nombre}}{{/apellido}}
+                                            </option>
+                                            {{/teachersList}}
+                                        </select>
+                                    </form>
+                                    {{/isAdmin}}
+                                    {{^isAdmin}}
+                                    <div class="flex flex-col">
+                                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Docente Asignado</span>
+                                        <span class="text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 flex items-center shadow-sm">
+                                            <span class="mr-1.5">👨‍🏫</span> {{#teacherName}}{{teacherName}}{{/teacherName}}{{^teacherName}}<span class="italic text-slate-400 font-medium">Sin asignar</span>{{/teacherName}}
+                                        </span>
+                                    </div>
+                                    {{/isAdmin}}
+                                </div>
+
+                                {{#isAdmin}}
+                                <div class="flex items-center space-x-1.5 pt-4 sm:pt-4">
+                                    <button onclick="cargarComisionEnForm('{{idComision}}', '{{idMateria}}', '{{comisionNombre}}', '{{horarioRaw}}')" 
+                                            class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-600 hover:text-blue-700 text-xs font-bold p-2.5 rounded-xl transition shadow-sm" 
+                                            title="Editar horarios">
+                                        ✏️
+                                    </button>
+                                </div>
+                                {{/isAdmin}}
+                            </div>
+                        </div>
+                        {{/plannedCommissions}}
+                    </div>
+                    {{/hasPlannedCommissions}}
+                    {{^hasPlannedCommissions}}
+                    <div class="text-center text-slate-400 py-12">
+                        <span class="text-3xl block mb-2">📅</span>
+                        <p class="text-xs font-semibold">No hay materias planificadas en este período.</p>
+                    </div>
+                    {{/hasPlannedCommissions}}
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 px-6 text-center text-xs text-slate-500 mt-auto">
+        <p>&copy; 2026 Aula Virtual - Trabajo Integrador IS2.</p>
+    </footer>
+
+    <!-- JavaScript Helper for switching commission and dynamic hours -->
+    <script>
+        function cambiarComision(nombreComision) {
+            if (nombreComision === 'ADD_NEW') {
+                const nextComm = '{{nextComisionName}}';
+                const url = new URL(window.location.href);
+                url.searchParams.set('comision', nextComm);
+                window.location.href = url.toString();
+            } else {
+                const url = new URL(window.location.href);
+                url.searchParams.set('comision', nombreComision);
+                window.location.href = url.toString();
+            }
+        }
+
+        function updateMateriaDropdown(editingMateriaId) {
+            const select = document.getElementById('id_materia');
+            if (!select) return;
+            for (let option of select.options) {
+                if (!option.value) continue;
+                const isAdded = option.getAttribute('data-added') === 'true';
+                if (isAdded) {
+                    if (option.value === String(editingMateriaId)) {
+                        option.style.display = '';
+                        option.disabled = false;
+                    } else {
+                        option.style.display = 'none';
+                        option.disabled = true;
+                    }
+                } else {
+                    option.style.display = '';
+                    option.disabled = false;
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateMateriaDropdown(null);
+        });
+
+        function cargarComisionEnForm(idComision, idMateria, nombreComision, horarioRaw) {
+            // Change form title and action
+            document.getElementById('form-title').innerText = 'Editar Materia en la ' + nombreComision;
+            const form = document.getElementById('comision-form');
+            form.action = '/planificacion/comision/editar';
+            
+            // Set id_materia and nombre selects
+            updateMateriaDropdown(idMateria);
+            document.getElementById('id_materia').value = idMateria;
+            document.getElementById('nombre').value = nombreComision;
+            
+            // Set/Ensure hidden id_comision input
+            let idInput = document.getElementById('id_comision_input');
+            if (!idInput) {
+                idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.id = 'id_comision_input';
+                idInput.name = 'id_comision';
+                form.appendChild(idInput);
+            }
+            idInput.value = idComision;
+            
+            // Parse schedules and populate rows
+            const container = document.getElementById('horarios-container');
+            container.innerHTML = ''; // Clear existing
+            
+            // Split horarioRaw by " y " or ","
+            const parts = horarioRaw.split(/\s+y\s+|,/);
+            parts.forEach((part, index) => {
+                const partClean = part.trim();
+                if (!partClean) return;
+                
+                // Extract day (e.g. Lunes, Martes...) and times (e.g. 18:00 - 20:00)
+                let day = 'Lunes';
+                let start = '18:00';
+                let end = '20:00';
+                
+                const dayMatch = partClean.match(/(Lunes|Martes|Miércoles|Miercoles|Jueves|Viernes|Sábado|Sabado)/i);
+                if (dayMatch) {
+                    day = dayMatch[1];
+                    // Normalize accents
+                    if (day.toLowerCase() === 'miercoles') day = 'Miércoles';
+                    if (day.toLowerCase() === 'sabado') day = 'Sábado';
+                }
+                
+                const timeMatch = partClean.match(/(\d{1,2}):(\d{2})\s*(?:-|a)\s*(\d{1,2}):(\d{2})/);
+                if (timeMatch) {
+                    start = `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}`;
+                    end = `${timeMatch[3].padStart(2, '0')}:${timeMatch[4]}`;
+                }
+                
+                agregarHorarioRowConValores(day, start, end, index === 0);
+            });
+            
+            // Show cancel button
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+        }
+
+        function cancelarEdicion() {
+            document.getElementById('form-title').innerText = 'Agregar Materia a la {{selectedComision}}';
+            const form = document.getElementById('comision-form');
+            form.action = '/planificacion/comision';
+            
+            // Remove hidden input if exists
+            const idInput = document.getElementById('id_comision_input');
+            if (idInput) idInput.remove();
+            
+            form.reset();
+            updateMateriaDropdown(null);
+            
+            // Restore default first row
+            const container = document.getElementById('horarios-container');
+            container.innerHTML = `
+                <div class="horario-row flex gap-1.5 items-center bg-slate-50 border border-slate-200 p-2 rounded-lg">
+                    <div class="flex-grow grid grid-cols-3 gap-1">
+                        <div>
+                            <select name="dias[]" required class="w-full border border-slate-200 rounded p-1 text-[10px] bg-white focus:outline-none cursor-pointer">
+                                <option value="Lunes">Lunes</option>
+                                <option value="Martes">Martes</option>
+                                <option value="Miércoles">Miércoles</option>
+                                <option value="Jueves">Jueves</option>
+                                <option value="Viernes">Viernes</option>
+                                <option value="Sábado">Sábado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select name="inicios[]" required class="w-full border border-slate-200 rounded p-1 text-[10px] bg-white focus:outline-none cursor-pointer">
+                                <option value="08:00">08:00</option>
+                                <option value="09:00">09:00</option>
+                                <option value="10:00">10:00</option>
+                                <option value="11:00">11:00</option>
+                                <option value="12:00">12:00</option>
+                                <option value="13:00">13:00</option>
+                                <option value="14:00">14:00</option>
+                                <option value="15:00">15:00</option>
+                                <option value="16:00">16:00</option>
+                                <option value="17:00">17:00</option>
+                                <option value="18:00" selected>18:00</option>
+                                <option value="19:00">19:00</option>
+                                <option value="20:00">20:00</option>
+                                <option value="21:00">21:00</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select name="fines[]" required class="w-full border border-slate-200 rounded p-1 text-[10px] bg-white focus:outline-none cursor-pointer">
+                                <option value="09:00">09:00</option>
+                                <option value="10:00">10:00</option>
+                                <option value="11:00">11:00</option>
+                                <option value="12:00">12:00</option>
+                                <option value="13:00">13:00</option>
+                                <option value="14:00">14:00</option>
+                                <option value="15:00">15:00</option>
+                                <option value="16:00">16:00</option>
+                                <option value="17:00">17:00</option>
+                                <option value="18:00">18:00</option>
+                                <option value="19:00">19:00</option>
+                                <option value="20:00" selected>20:00</option>
+                                <option value="21:00">21:00</option>
+                                <option value="22:00">22:00</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="w-4"></div>
+                </div>
+            `;
+            
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+        }
+
+        function agregarHorarioRow() {
+            agregarHorarioRowConValores('Lunes', '18:00', '20:00', false);
+        }
+
+        function agregarHorarioRowConValores(day, start, end, isFirst) {
+            const container = document.getElementById('horarios-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'horario-row flex gap-1.5 items-center bg-slate-50 border border-slate-200 p-2 rounded-lg mt-2 animate-fade-in';
+            newRow.innerHTML = `
+                <div class="flex-grow grid grid-cols-3 gap-1">
+                    <div>
+                        <select name="dias[]" required class="w-full border border-slate-200 rounded p-1 text-[10px] bg-white focus:outline-none cursor-pointer text-slate-700 font-medium">
+                            <option value="Lunes" ${day === 'Lunes' ? 'selected' : ''}>Lunes</option>
+                            <option value="Martes" ${day === 'Martes' ? 'selected' : ''}>Martes</option>
+                            <option value="Miércoles" ${day === 'Miércoles' ? 'selected' : ''}>Miércoles</option>
+                            <option value="Jueves" ${day === 'Jueves' ? 'selected' : ''}>Jueves</option>
+                            <option value="Viernes" ${day === 'Viernes' ? 'selected' : ''}>Viernes</option>
+                            <option value="Sábado" ${day === 'Sábado' ? 'selected' : ''}>Sábado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select name="inicios[]" required class="w-full border border-slate-200 rounded p-1 text-[10px] bg-white focus:outline-none cursor-pointer text-slate-700 font-medium">
+                            ${getHoursOptions(start)}
+                        </select>
+                    </div>
+                    <div>
+                        <select name="fines[]" required class="w-full border border-slate-200 rounded p-1 text-[10px] bg-white focus:outline-none cursor-pointer text-slate-700 font-medium">
+                            ${getHoursOptions(end)}
+                        </select>
+                    </div>
+                </div>
+                ${isFirst ? '<div class="w-4"></div>' : '<button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition text-xs w-4 flex items-center justify-center font-bold">✖</button>'}
+            `;
+            container.appendChild(newRow);
+        }
+
+        function getHoursOptions(selectedValue) {
+            let options = '';
+            for (let i = 8; i <= 22; i++) {
+                const hourStr = `${String(i).padStart(2, '0')}:00`;
+                options += `<option value="${hourStr}" ${selectedValue === hourStr ? 'selected' : ''}>${hourStr}</option>`;
+            }
+            return options;
+        }
+    </script>
+
+</body>
+</html>

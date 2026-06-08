@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Situación Académica - Aula Virtual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-2 rounded-lg font-bold text-lg shadow-md shadow-blue-200">AV</span>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">Aula Virtual</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-slate-500">Conectado como <strong class="text-slate-800 font-semibold">{{currentUser}}</strong></span>
+                <a href="/dashboard" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition">Volver al Panel</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-6 md:p-8 flex flex-col space-y-8">
+        
+        <!-- Header Section -->
+        <div class="flex flex-col space-y-2 md:flex-row md:justify-between md:items-center md:space-y-0">
+            <div>
+                <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Tu Situación Académica</h2>
+                <p class="text-sm text-slate-500">Revisa el detalle de tus materias aprobadas y regularizadas de manera clara e independiente.</p>
+            </div>
+            <div></div>
+        </div>
+
+        <!-- Two Column Grid for Aprobadas & Regularizadas -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- SECTION 1: MATERIAS APROBADAS -->
+            <section class="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden">
+                <div class="p-6 border-b border-slate-100 bg-emerald-50/20 flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold">
+                            🟢
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-slate-900 text-sm">Materias Aprobadas</h3>
+                            <p class="text-[10px] text-slate-500">Asignaturas completadas con nota final.</p>
+                        </div>
+                    </div>
+                    <span class="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
+                        Total: {{totalAprobadas}}
+                    </span>
+                </div>
+
+                <div class="p-6 flex-1 flex flex-col">
+                    {{#hasAprobadas}}
+                    <div class="space-y-4">
+                        {{#aprobadas}}
+                        <div class="p-4 border border-slate-100 rounded-2xl bg-slate-50/50 hover:bg-slate-50 transition flex justify-between items-center shadow-sm">
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 tracking-wider uppercase">{{materia_codigo}}</span>
+                                <span class="font-bold text-slate-950 text-sm">{{materia_nombre}}</span>
+                                {{#fecha_nota}}
+                                <span class="text-[10px] text-slate-400 font-medium">Cargado: {{fecha_nota}}</span>
+                                {{/fecha_nota}}
+                            </div>
+                            <div class="flex flex-col items-end space-y-1">
+                                <span class="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-lg">
+                                    Nota: {{nota}}
+                                </span>
+                            </div>
+                        </div>
+                        {{/aprobadas}}
+                    </div>
+                    {{/hasAprobadas}}
+
+                    {{^hasAprobadas}}
+                    <div class="flex-grow flex flex-col items-center justify-center py-16 text-center text-slate-400">
+                        <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-2xl mb-4">
+                            🎓
+                        </div>
+                        <h4 class="text-sm font-bold text-slate-700">Sin Materias Aprobadas</h4>
+                        <p class="max-w-xs text-xs text-slate-400 mt-1">Aún no registras materias aprobadas con nota final en el sistema.</p>
+                    </div>
+                    {{/hasAprobadas}}
+                </div>
+            </section>
+
+            <!-- SECTION 2: MATERIAS REGULARIZADAS -->
+            <section class="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden">
+                <div class="p-6 border-b border-slate-100 bg-blue-50/20 flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg font-bold">
+                            🔵
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-slate-900 text-sm">Materias Regularizadas</h3>
+                            <p class="text-[10px] text-slate-500">Cursada regular aprobada. Pendientes de examen final.</p>
+                        </div>
+                    </div>
+                    <span class="bg-blue-100 text-blue-800 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
+                        Total: {{totalRegularizadas}}
+                    </span>
+                </div>
+
+                <div class="p-6 flex-1 flex flex-col">
+                    {{#hasRegularizadas}}
+                    <div class="space-y-4">
+                        {{#regularizadas}}
+                        <div class="p-4 border border-slate-100 rounded-2xl bg-slate-50/50 hover:bg-slate-50 transition flex justify-between items-center shadow-sm">
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 tracking-wider uppercase">{{materia_codigo}}</span>
+                                <span class="font-bold text-slate-950 text-sm">{{materia_nombre}}</span>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2.5 py-1 rounded-lg">
+                                    Regularizada
+                                </span>
+                            </div>
+                        </div>
+                        {{/regularizadas}}
+                    </div>
+                    {{/hasRegularizadas}}
+
+                    {{^hasRegularizadas}}
+                    <div class="flex-grow flex flex-col items-center justify-center py-16 text-center text-slate-400">
+                        <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-2xl mb-4">
+                            📖
+                        </div>
+                        <h4 class="text-sm font-bold text-slate-700">Sin Materias Regularizadas</h4>
+                        <p class="max-w-xs text-xs text-slate-400 mt-1">Aún no registras cursadas con condición de Regularizadas (debe examen final).</p>
+                    </div>
+                    {{/hasRegularizadas}}
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 px-6 text-center text-xs text-slate-500">
+        <p>&copy; 2026 Aula Virtual - Trabajo Integrador IS2.</p>
+    </footer>
+
+</body>
+</html>

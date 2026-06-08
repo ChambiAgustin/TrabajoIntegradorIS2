@@ -39,11 +39,11 @@ public class User extends Model {
     }
 
     public Integer getPersonId() {
-        return getInteger("person_id");
+        return getInteger("id_persona");
     }
 
     public void setPersonId(Integer personId) {
-        set("person_id", personId);
+        set("id_persona", personId);
     }
 
 }

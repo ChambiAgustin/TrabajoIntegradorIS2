@@ -23,6 +23,16 @@ import com.is1.proyecto.config.DBConfigSingleton; // Clase Singleton para la con
 import com.is1.proyecto.models.User; // Modelo de ActiveJDBC que representa la tabla 'users'.
 import com.is1.proyecto.models.Person;
 import com.is1.proyecto.models.Professor;
+import com.is1.proyecto.models.Message;
+
+// Utilidades adicionales de Java
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Clase principal de la aplicación Spark.
@@ -39,7 +49,9 @@ public class App {
      * Aquí se configuran todas las rutas y filtros de Spark.
      */
     public static void main(String[] args) {
-        port(8081); // Configura el puerto en el que la aplicación Spark escuchará las peticiones (por defecto es 4567).
+        String portProp = System.getProperty("server.port");
+        int portNumber = portProp != null ? Integer.parseInt(portProp) : 8081;
+        port(portNumber); // Configura el puerto en el que la aplicación Spark escuchará las peticiones.
 
         // Obtener la instancia única del singleton de configuración de la base de datos.
         DBConfigSingleton dbConfig = DBConfigSingleton.getInstance();
@@ -47,6 +59,236 @@ public class App {
         // --- SEEDERS (Datos de prueba) ---
         try {
             Base.open(dbConfig.getDriver(), dbConfig.getDbUrl(), dbConfig.getUser(), dbConfig.getPass());
+            
+            // Verificar si la tabla 'users' existe en la base de datos
+            boolean hasUsersTable = false;
+            try {
+                Base.firstCell("SELECT 1 FROM users LIMIT 1");
+                hasUsersTable = true;
+            } catch (Exception e) {
+                // La tabla no existe
+            }
+
+            if (!hasUsersTable) {
+                System.out.println("La tabla 'users' no existe. Inicializando esquema desde scheme.sql...");
+                try (java.io.InputStream is = App.class.getResourceAsStream("/scheme.sql")) {
+                    if (is != null) {
+                        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(is, java.nio.charset.StandardCharsets.UTF_8))) {
+                            StringBuilder sqlBuilder = new StringBuilder();
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                if (line.trim().startsWith("--") || line.trim().isEmpty()) {
+                                    continue;
+                                }
+                                sqlBuilder.append(line).append("\n");
+                            }
+                            String[] statements = sqlBuilder.toString().split(";");
+                            for (String statement : statements) {
+                                String cleanStatement = statement.trim();
+                                if (!cleanStatement.isEmpty()) {
+                                    Base.exec(cleanStatement);
+                                }
+                            }
+                            System.out.println("Esquema inicializado con éxito.");
+                        }
+                    } else {
+                        System.err.println("No se encontró el archivo scheme.sql en los recursos.");
+                    }
+                } catch (Exception ex) {
+                    System.err.println("Error al inicializar el esquema desde scheme.sql: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
+            }
+
+            // Intentar añadir las columnas must_change_password, active y temp_password_created_at si no existen en la tabla users
+            try {
+                Base.exec("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+            try {
+                Base.exec("ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+            try {
+                Base.exec("ALTER TABLE users ADD COLUMN temp_password_created_at TEXT");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+
+            // Migraciones para Auto-Registro y Aprobación de Admin
+            try {
+                Base.exec("ALTER TABLE users ADD COLUMN estado TEXT DEFAULT 'pendiente' CHECK(estado IN ('pendiente','activo','rechazado','deshabilitado'))");
+                Base.exec("UPDATE users SET estado = 'activo' WHERE active = 1");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+            try {
+                Base.exec("ALTER TABLE users ADD COLUMN creado_en TEXT");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+
+
+            // Intentar añadir la columna anio si no existe en la tabla materias
+            try {
+                Base.exec("ALTER TABLE materias ADD COLUMN anio INTEGER NOT NULL DEFAULT 1");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+
+            // Intentar añadir la columna nombre si no existe en la tabla comisiones
+            try {
+                Base.exec("ALTER TABLE comisiones ADD COLUMN nombre TEXT NOT NULL DEFAULT 'Comisión 1'");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+
+            // Intentar añadir la columna id_materia si no existe en la tabla inscripciones
+            try {
+                Base.exec("ALTER TABLE inscripciones ADD COLUMN id_materia INTEGER REFERENCES materias(id_materia)");
+                Base.exec("UPDATE inscripciones SET id_materia = (SELECT id_materia FROM comisiones WHERE comisiones.id_comision = inscripciones.id_comision) WHERE id_materia IS NULL AND id_comision IS NOT NULL");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+
+            // Intentar añadir la columna condicion si no existe en la tabla inscripciones
+            try {
+                Base.exec("ALTER TABLE inscripciones ADD COLUMN condicion TEXT");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+
+            // Intentar añadir la columna anio_lectivo si no existe en la tabla inscripciones
+            try {
+                Base.exec("ALTER TABLE inscripciones ADD COLUMN anio_lectivo INTEGER");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+
+            // Intentar añadir la columna cuatrimestre si no existe en la tabla inscripciones
+            try {
+                Base.exec("ALTER TABLE inscripciones ADD COLUMN cuatrimestre TEXT");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+
+            // Actualizar filas de inscripción sin año lectivo o cuatrimestre
+            try {
+                Base.exec("UPDATE inscripciones SET anio_lectivo = 2026 WHERE anio_lectivo IS NULL");
+                Base.exec("UPDATE inscripciones SET cuatrimestre = (SELECT periodo FROM materias WHERE materias.id_materia = inscripciones.id_materia) WHERE cuatrimestre IS NULL");
+            } catch (Exception e) {
+                System.err.println("Fallo al migrar datos de inscripciones: " + e.getMessage());
+            }
+
+            // Crear la tabla docente_materia si no existe aún en la base física
+            Base.exec("CREATE TABLE IF NOT EXISTS docente_materia(" +
+                      "    id_prof INTEGER," +
+                      "    id_materia INTEGER," +
+                      "    PRIMARY KEY (id_prof, id_materia)," +
+                      "    FOREIGN KEY (id_prof) REFERENCES professors(id_prof) ON DELETE CASCADE," +
+                      "    FOREIGN KEY (id_materia) REFERENCES materias(id_materia) ON DELETE CASCADE" +
+                      ")");
+
+            // Intentar añadir la columna id_padre si no existe en la tabla mensajes
+            try {
+                Base.exec("ALTER TABLE mensajes ADD COLUMN id_padre INTEGER REFERENCES mensajes(id_mensaje) ON DELETE CASCADE");
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+                if (!msg.contains("duplicate column name") && !msg.contains("already exists")) {
+                    throw e;
+                }
+            }
+
+            // Crear la tabla adjuntos si no existe
+            Base.exec("CREATE TABLE IF NOT EXISTS adjuntos(" +
+                      "    id_adjunto INTEGER PRIMARY KEY AUTOINCREMENT," +
+                      "    id_mensaje INTEGER REFERENCES mensajes(id_mensaje) ON DELETE CASCADE," +
+                      "    nombre_archivo TEXT NOT NULL," +
+                      "    ruta_archivo TEXT NOT NULL" +
+                      ")");
+
+
+            // Crear la tabla correlativas si no existe aún en la base física
+            Base.exec("CREATE TABLE IF NOT EXISTS correlativas(" +
+                      "    id_materia INTEGER," +
+                      "    id_correlativa INTEGER," +
+                      "    tipo TEXT CHECK(tipo IN ('A', 'R'))," +
+                      "    PRIMARY KEY (id_materia, id_correlativa)," +
+                      "    FOREIGN KEY (id_materia) REFERENCES materias(id_materia) ON DELETE CASCADE," +
+                      "    FOREIGN KEY (id_correlativa) REFERENCES materias(id_materia) ON DELETE CASCADE" +
+                      ")");
+
+            // Crear la tabla configuraciones si no existe
+            Base.exec("CREATE TABLE IF NOT EXISTS configuraciones(" +
+                      "    clave TEXT PRIMARY KEY," +
+                      "    valor TEXT" +
+                      ")");
+
+            // Crear la tabla solicitudes_comision si no existe
+            Base.exec("CREATE TABLE IF NOT EXISTS solicitudes_comision(" +
+                      "    id_solicitud INTEGER PRIMARY KEY AUTOINCREMENT," +
+                      "    id_alumno INTEGER," +
+                      "    comision_solicitada TEXT NOT NULL," +
+                      "    fecha TEXT NOT NULL," +
+                      "    estado TEXT NOT NULL CHECK(estado IN ('PENDIENTE', 'APROBADO', 'RECHAZADO'))," +
+                      "    anio_lectivo INTEGER NOT NULL," +
+                      "    cuatrimestre TEXT NOT NULL," +
+                      "    FOREIGN KEY (id_alumno) REFERENCES alumnos(id_alumno)" +
+                      ")");
+
+            // Insertar la configuración por defecto si no existe
+            try {
+                List<Map> res = Base.findAll("SELECT valor FROM configuraciones WHERE clave = 'inscripcion_activa'");
+                if (res.isEmpty()) {
+                    Base.exec("INSERT INTO configuraciones (clave, valor) VALUES ('inscripcion_activa', 'true')");
+                }
+                List<Map> resPeriodo = Base.findAll("SELECT valor FROM configuraciones WHERE clave = 'inscripcion_periodo'");
+                if (resPeriodo.isEmpty()) {
+                    Base.exec("INSERT INTO configuraciones (clave, valor) VALUES ('inscripcion_periodo', '1° Cuatrimestre')");
+                }
+                List<Map> resAnio = Base.findAll("SELECT valor FROM configuraciones WHERE clave = 'inscripcion_anio'");
+                if (resAnio.isEmpty()) {
+                    Base.exec("INSERT INTO configuraciones (clave, valor) VALUES ('inscripcion_anio', '2026')");
+                }
+            } catch (Exception e) {
+                System.err.println("Fallo al inicializar configuracion por defecto: " + e.getMessage());
+            }
+
             com.is1.proyecto.utils.Seeder.seed();
             Base.close();
         } catch (Exception e) {
@@ -57,6 +299,10 @@ public class App {
         // Este filtro se ejecuta antes de cada solicitud HTTP.
         before((req, res) -> {
             try {
+                // Si la conexión ya está abierta en este hilo por un ciclo previo interrumpido, la cerramos para evitar fugas.
+                if (Base.hasConnection()) {
+                    Base.close();
+                }
                 // Abre una conexión a la base de datos utilizando las credenciales del singleton.
                 Base.open(dbConfig.getDriver(), dbConfig.getDbUrl(), dbConfig.getUser(), dbConfig.getPass());
                 System.out.println(req.url());
@@ -69,16 +315,56 @@ public class App {
             }
         });
 
+        // --- Filtro 'before' para forzar cambio de contraseña ---
+        before((req, res) -> {
+            Boolean logueado = req.session().attribute("loggedIn");
+            if (logueado == null || !logueado) {
+                return;
+            }
+
+            Boolean debeCambiar = req.session().attribute("mustChangePassword");
+            if (Boolean.TRUE.equals(debeCambiar)) {
+                String path = req.pathInfo();
+                boolean permitida = path.equals("/password/change")
+                                 || path.equals("/logout")
+                                 || path.startsWith("/css")
+                                 || path.startsWith("/js")
+                                 || path.startsWith("/images")
+                                 || path.startsWith("/img");
+                if (!permitida) {
+                    res.redirect("/password/change");
+                    halt();
+                }
+            }
+        });
+
         // --- Filtro 'after' para cerrar la conexión a la base de datos ---
         // Este filtro se ejecuta después de que cada solicitud HTTP ha sido procesada.
         after((req, res) -> {
             try {
-                // Cierra la conexión a la base de datos para liberar recursos.
-                Base.close();
+                // Cierra la conexión a la base de datos para liberar recursos si sigue abierta.
+                if (Base.hasConnection()) {
+                    Base.close();
+                }
             } catch (Exception e) {
                 // Si ocurre un error al cerrar la conexión, se registra.
                 System.err.println("Error al cerrar conexión con ActiveJDBC: " + e.getMessage());
             }
+        });
+
+        // --- Manejador de excepciones global para evitar fugas de conexión de base de datos en caso de errores ---
+        exception(Exception.class, (e, req, res) -> {
+            System.err.println("Excepción no manejada en la ruta: " + e.getMessage());
+            e.printStackTrace();
+            if (Base.hasConnection()) {
+                try {
+                    Base.close();
+                } catch (Exception ex) {
+                    System.err.println("Error al cerrar conexión en exception handler: " + ex.getMessage());
+                }
+            }
+            res.status(500);
+            res.body("Error interno del servidor: " + e.getMessage());
         });
 
         // --- Rutas GET para renderizar formularios y páginas HTML ---
@@ -111,29 +397,42 @@ public class App {
         // GET: Ruta para mostrar el dashboard (panel de control) del usuario.
         // Requiere que el usuario esté autenticado.
         get("/dashboard", (req, res) -> {
-            Map<String, Object> model = new HashMap<>(); // Modelo para la plantilla del dashboard.
+            Map<String, Object> model = new HashMap<>();
 
-            // Intenta obtener el nombre de usuario y la bandera de login de la sesión.
             String currentUsername = req.session().attribute("currentUserUsername");
             Boolean loggedIn = req.session().attribute("loggedIn");
+            Object currentUserIdObj = req.session().attribute("userId");
 
-            // 1. Verificar si el usuario ha iniciado sesión.
-            // Si no hay un nombre de usuario en la sesión, la bandera es nula o falsa,
-            // significa que el usuario no está logueado o su sesión expiró.
-            if (currentUsername == null || loggedIn == null || !loggedIn) {
-                System.out.println("DEBUG: Acceso no autorizado a /dashboard. Redirigiendo a /login.");
-                // Redirige al login con un mensaje de error.
-                res.redirect("/login?error=Debes iniciar sesión para acceder a esta página.");
-                return null; // Importante retornar null después de una redirección.
+            if (currentUsername == null || loggedIn == null || !loggedIn || currentUserIdObj == null) {
+                System.out.println("DEBUG: Acceso no autorizado a /dashboard. Redirigiendo a /.");
+                res.redirect("/?error=" + URLEncoder.encode("Debes iniciar sesión para acceder a esta página.", StandardCharsets.UTF_8));
+                return null;
             }
 
-            // 2. Si el usuario está logueado, añade el nombre de usuario al modelo para la plantilla.
-            model.put("username", currentUsername);
-            model.put("tipo_usuario", req.session().attribute("tipoUsuario")); // Recupera el rol de la sesión
+            int currentUserId = ((Number) currentUserIdObj).intValue();
+            String role = req.session().attribute("tipoUsuario");
 
-            // 3. Renderiza la plantilla del dashboard con el nombre de usuario.
+            model.put("username", currentUsername);
+            model.put("currentUser", currentUsername);
+            model.put("userRole", role);
+            
+            model.put("isAlumnoRole", "ALUMNO".equals(role));
+            model.put("isDocenteRole", "DOCENTE".equals(role));
+            model.put("isAdminRole", "ADMIN".equals(role) || "ADMINISTRADOR".equals(role));
+
+            if ("ADMIN".equals(role) || "ADMINISTRADOR".equals(role)) {
+                long pendingUsersCount = com.is1.proyecto.models.User.count("estado = 'pendiente'");
+                model.put("pendingUsersCount", pendingUsersCount);
+                model.put("hasPendingUsers", pendingUsersCount > 0);
+            }
+
+            // Notificaciones no leídas
+            long unreadNotifications = com.is1.proyecto.models.Notification.count("id_usuario = ? AND leida = 0", currentUserId);
+            model.put("unreadNotifications", unreadNotifications);
+            model.put("hasNotifications", unreadNotifications > 0);
+
             return new ModelAndView(model, "dashboard.mustache");
-        }, new MustacheTemplateEngine()); // Especifica el motor de plantillas para esta ruta.
+        }, new MustacheTemplateEngine());
 
         // GET: Ruta para cerrar la sesión del usuario.
         get("/logout", (req, res) -> {
@@ -174,9 +473,9 @@ public class App {
 
      
         get("/professor/new", (req, res) -> {
-            return new ModelAndView(new HashMap<>(), "profesor_form.mustache");
-        }, new MustacheTemplateEngine());
-
+            res.redirect("/profesor/new");
+            return null;
+        });
         
 
         // --- Rutas POST para manejar envíos de formularios y APIs ---
@@ -190,7 +489,7 @@ public class App {
             if (name == null || name.isEmpty() || password == null || password.isEmpty()) {
                 res.status(400); // Código de estado HTTP 400 (Bad Request).
                 // Redirige al formulario de creación con un mensaje de error.
-                res.redirect("/user/create?error=Nombre y contraseña son requeridos.");
+                res.redirect("/user/create?error=" + URLEncoder.encode("Nombre y contraseña son requeridos.", StandardCharsets.UTF_8));
                 return ""; // Retorna una cadena vacía ya que la respuesta ya fue redirigida.
             }
 
@@ -213,7 +512,7 @@ public class App {
 
                 res.status(201); // Código de estado HTTP 201 (Created) para una creación exitosa.
                 // Redirige al formulario de creación con un mensaje de éxito.
-                res.redirect("/user/create?message=Cuenta creada exitosamente para " + name + "!");
+                res.redirect("/user/create?message=" + URLEncoder.encode("Cuenta creada exitosamente para " + name + "!", StandardCharsets.UTF_8));
                 return ""; // Retorna una cadena vacía.
 
             } catch (Exception e) {
@@ -222,7 +521,7 @@ public class App {
                 System.err.println("Error al registrar la cuenta: " + e.getMessage());
                 e.printStackTrace(); // Imprime el stack trace para depuración.
                 res.status(500); // Código de estado HTTP 500 (Internal Server Error).
-                res.redirect("/user/create?error=Error interno al crear la cuenta. Intente de nuevo.");
+                res.redirect("/user/create?error=" + URLEncoder.encode("Error interno al crear la cuenta. Intente de nuevo.", StandardCharsets.UTF_8));
                 return ""; // Retorna una cadena vacía.
             }
         });
@@ -245,10 +544,15 @@ public class App {
                 return new ModelAndView(model, "login.mustache"); // Renderiza la plantilla de login con error.
             }
 
-            // Busca la cuenta en la base de datos por el nombre de usuario.
-            User ac = User.findFirst("name = ?", username);
+            // Busca la cuenta en la base de datos por nombre de usuario (DNI) o email.
+            User ac = null;
+            if (username != null && username.contains("@")) {
+                ac = com.is1.proyecto.daos.UsuarioDAO.buscarPorEmail(username);
+            } else {
+                ac = User.findFirst("name = ?", username);
+            }
 
-            // Si no se encuentra ninguna cuenta con ese nombre de usuario.
+            // Si no se encuentra ninguna cuenta
             if (ac == null) {
                 res.status(401); // Unauthorized.
                 model.put("errorMessage", "Usuario o contraseña incorrectos."); // Mensaje genérico por seguridad.
@@ -259,25 +563,69 @@ public class App {
             String storedHashedPassword = ac.getString("password");
 
             // Compara la contraseña en texto plano ingresada con la contraseña hasheada almacenada.
-            // BCrypt.checkpw hashea la plainTextPassword con el salt de storedHashedPassword y compara.
             if (BCrypt.checkpw(plainTextPassword, storedHashedPassword)) {
+                
+                // Verificar el estado de la cuenta del usuario antes de iniciar sesión.
+                String estado = ac.getString("estado");
+                if (estado == null) {
+                    estado = "activo";
+                }
+
+                if (!"activo".equalsIgnoreCase(estado)) {
+                    res.status(401);
+                    if ("pendiente".equalsIgnoreCase(estado)) {
+                        model.put("errorMessage", "Tu cuenta aún no fue aprobada.");
+                    } else if ("rechazado".equalsIgnoreCase(estado)) {
+                        model.put("errorMessage", "Tu solicitud fue rechazada.");
+                    } else if ("deshabilitado".equalsIgnoreCase(estado)) {
+                        model.put("errorMessage", "Tu cuenta fue deshabilitada.");
+                    } else {
+                        model.put("errorMessage", "Estado de cuenta no válido.");
+                    }
+                    return new ModelAndView(model, "login.mustache");
+                }
+
+                
+                // Verificar si la clave temporal ha expirado (límite de 48 horas)
+                Integer mustChange = ac.getInteger("must_change_password");
+                if (mustChange != null && mustChange == 1) {
+                    String createdAtStr = ac.getString("temp_password_created_at");
+                    if (createdAtStr != null && !createdAtStr.isEmpty()) {
+                        try {
+                            LocalDateTime createdAt = LocalDateTime.parse(createdAtStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                            if (createdAt.plusHours(48).isBefore(LocalDateTime.now())) {
+                                res.status(401);
+                                model.put("errorMessage", "La contraseña temporal ha expirado. Por favor contacte al administrador.");
+                                return new ModelAndView(model, "login.mustache");
+                            }
+                        } catch (Exception e) {
+                            res.status(401);
+                            model.put("errorMessage", "Error de seguridad en la cuenta. Contacte al administrador.");
+                            return new ModelAndView(model, "login.mustache");
+                        }
+                    }
+                }
+
                 // Autenticación exitosa.
                 res.status(200); // OK.
 
-                // --- Gestión de Sesión ---
-                req.session(true).attribute("currentUserUsername", username); // Guarda el nombre de usuario en la sesión.
-                req.session().attribute("userId", ac.getId()); // Guarda el ID de la cuenta en la sesión (útil).
-                req.session().attribute("loggedIn", true); // Establece una bandera para indicar que el usuario está logueado.
-                req.session().attribute("tipoUsuario", ac.getString("tipo_usuario")); // NUEVO: Guardamos el rol en la sesión
+                // --- Gestión de Sesión (Prevenir Fijación de Sesión) ---
+                req.session().invalidate(); // Invalida la sesión anónima anterior
+                spark.Session session = req.session(true); // Crea una sesión completamente nueva
+
+                session.attribute("currentUserUsername", username); // Guarda el nombre de usuario en la sesión.
+                session.attribute("userId", ac.getId()); // Guarda el ID de la cuenta en la sesión (útil).
+                session.attribute("loggedIn", true); // Establece una bandera para indicar que el usuario está logueado.
+                session.attribute("tipoUsuario", ac.getString("tipo_usuario")); // Guardamos el rol en la sesión
+
+                boolean debeCambiar = mustChange != null && mustChange == 1;
+                session.attribute("mustChangePassword", debeCambiar);
 
                 System.out.println("DEBUG: Login exitoso para la cuenta: " + username + " (" + ac.getString("tipo_usuario") + ")");
-                System.out.println("DEBUG: ID de Sesión: " + req.session().id());
+                System.out.println("DEBUG: ID de Sesión (nueva): " + session.id());
 
-                model.put("username", username); // Añade el nombre de usuario al modelo para el dashboard.
-                model.put("tipo_usuario", ac.getString("tipo_usuario")); // NUEVO: Para mostrar en la vista
-
-                // Renderiza la plantilla del dashboard tras un login exitoso.
-                return new ModelAndView(model, "dashboard.mustache");
+                res.redirect(debeCambiar ? "/password/change" : "/dashboard");
+                return null;
             } else {
                 // Contraseña incorrecta.
                 res.status(401); // Unauthorized.
@@ -331,6 +679,11 @@ public class App {
 
 
         ProfessorController.registerRoutes(); // Registra las rutas del controlador de profesores.
+        com.is1.proyecto.controllers.MessageController.registerRoutes(); // Registra las rutas de mensajería
+        com.is1.proyecto.controllers.AcademicController.registerRoutes(); // Registra las rutas académicas
+        com.is1.proyecto.controllers.AuthController.registerRoutes(); // Registra las rutas de registro público
+        com.is1.proyecto.controllers.AdminController.registerRoutes(); // Registra las rutas administrativas de aprobación
+
 
     } // Fin del método main
 } // Fin de la clase App

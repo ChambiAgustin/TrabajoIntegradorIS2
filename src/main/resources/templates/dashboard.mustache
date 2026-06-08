@@ -3,36 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Bienvenido</title>
+    <title>Panel de Control - Aula Virtual</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Panel de Control</h1>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-        {{#username}}
-        <p class="text-xl text-center text-gray-700 mb-8">¡Bienvenido, <span class="font-semibold text-blue-600">{{username}}</span>!</p>
-        {{/username}}
-        {{^username}}
-        <p class="text-xl text-center text-gray-700 mb-8">¡Bienvenido!</p>
-        {{/username}}
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-blue-50 border border-blue-200 p-6 rounded-lg text-center shadow-sm">
-                <h2 class="text-2xl font-bold text-blue-700 mb-3">Tu Perfil</h2>
-                <p class="text-gray-600 mb-4">Gestiona la información de tu cuenta.</p>
-                <a href="/profile" class="inline-block bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300">Ver Perfil</a>
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-2 rounded-lg font-bold text-lg shadow-md shadow-blue-200">AV</span>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">Aula Virtual</h1>
             </div>
-            <div class="bg-green-50 border border-green-200 p-6 rounded-lg text-center shadow-sm">
-                <h2 class="text-2xl font-bold text-green-700 mb-3">Configuraciones</h2>
-                <p class="text-gray-600 mb-4">Ajusta las preferencias de tu aplicación.</p>
-                <a href="/settings" class="inline-block bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-300">Configuración</a>
+            <div class="flex items-center space-x-6">
+                <!-- Notifications icon -->
+                <a href="/notificaciones" class="relative p-1 text-slate-500 hover:text-indigo-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                    </svg>
+                    {{#hasNotifications}}
+                    <span class="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white animate-pulse"></span>
+                    {{/hasNotifications}}
+                </a>
+                <span class="text-sm text-slate-500">Hola, <strong class="text-slate-800 font-semibold">{{currentUser}}</strong></span>
+                <a href="/logout" class="text-sm font-semibold text-red-600 hover:text-red-700 transition">Cerrar Sesión</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Hero -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-6 md:p-10 flex flex-col space-y-8">
+        
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-8 md:p-12 text-white shadow-xl shadow-blue-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+                <span class="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">{{userRole}}</span>
+                <h2 class="text-3xl md:text-4xl font-extrabold mt-3 tracking-tight">Bienvenido a tu Espacio Educativo</h2>
+                <p class="text-blue-100 mt-2 max-w-xl text-sm md:text-base">Accede a tus clases, mensajería, boletines y notificaciones desde una sola plataforma unificada.</p>
+            </div>
+            <div class="flex items-center space-x-3 bg-white/10 px-6 py-4 rounded-2xl backdrop-blur-sm border border-white/10">
+                <span class="text-sm font-medium">Alertas Pendientes:</span>
+                <span class="bg-white text-indigo-600 font-bold px-3 py-1 rounded-full text-sm shadow-sm">{{unreadNotifications}}</span>
             </div>
         </div>
 
-        <div class="text-center mt-6">
-            <a href="/logout" class="inline-block bg-red-600 text-white py-2 px-6 rounded-md hover:bg-red-700 transition duration-300 text-lg">Cerrar Sesión</a>
+        <!-- Role-based Action Grid -->
+        <div>
+            <h3 class="text-lg font-bold text-slate-900 mb-6">Módulos Disponibles</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- ALUMNO MODULOS -->
+                {{#isAlumnoRole}}
+                <!-- Inscripcion -->
+                <a href="/inscripcion" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-500 transition duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold mb-4 group-hover:bg-blue-600 group-hover:text-white transition duration-300">
+                            📚
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-blue-600 transition">Inscripción a Materias</h4>
+                        <p class="text-xs text-slate-500 mt-2">Inscríbete en comisiones y horarios para tus cursadas.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-blue-600 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Inscribirse &rarr;</span>
+                </a>
+
+                <!-- Comunidad -->
+                <a href="/comunidad" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-500 transition duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold mb-4 group-hover:bg-indigo-600 group-hover:text-white transition duration-300">
+                            👥
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-indigo-600 transition">Tablero de Comunidad</h4>
+                        <p class="text-xs text-slate-500 mt-2">Accede a foros públicos de discusión y anuncios de tu comisión.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-indigo-600 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Ver Foros &rarr;</span>
+                </a>
+
+                <!-- Mensajes -->
+                <a href="/messages" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-500 transition duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold mb-4 group-hover:bg-indigo-600 group-hover:text-white transition duration-300">
+                            💬
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-indigo-600 transition">Mensajería Privada</h4>
+                        <p class="text-xs text-slate-500 mt-2">Mantén conversaciones directas y privadas con tus docentes.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-indigo-600 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Enviar Mensaje &rarr;</span>
+                </a>
+
+
+
+                <!-- Situación Académica -->
+                <a href="/situacion-academica" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-500 transition duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold mb-4 group-hover:bg-indigo-600 group-hover:text-white transition duration-300">
+                            📋
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-indigo-600 transition">Situación Académica</h4>
+                        <p class="text-xs text-slate-500 mt-2">Consulta de manera separada tus materias aprobadas y regularizadas.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-indigo-600 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Ver Situación &rarr;</span>
+                </a>
+                {{/isAlumnoRole}}
+
+
+                <!-- DOCENTE MODULOS -->
+                {{#isDocenteRole}}
+                <!-- Planificacion -->
+                <a href="/planificacion" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-500 transition duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold mb-4 group-hover:bg-blue-600 group-hover:text-white transition duration-300">
+                            📅
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-blue-600 transition">Mis Horarios y Comisiones</h4>
+                        <p class="text-xs text-slate-500 mt-2">Consulta tus comisiones asignadas, horarios de clase y tu agenda de cursada semanal.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-blue-600 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Ver Mis Horarios &rarr;</span>
+                </a>
+
+                <!-- Carga de notas -->
+                <a href="/evaluacion" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-green-500 transition duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center font-bold mb-4 group-hover:bg-green-600 group-hover:text-white transition duration-300">
+                            📝
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-green-600 transition">Carga de Notas</h4>
+                        <p class="text-xs text-slate-500 mt-2">Sube calificaciones y evaluaciones para los alumnos en tus comisiones.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-green-600 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Cargar Notas &rarr;</span>
+                </a>
+
+                <!-- Comunidad -->
+                <a href="/comunidad" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-500 transition duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold mb-4 group-hover:bg-indigo-600 group-hover:text-white transition duration-300">
+                            👥
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-indigo-600 transition">Tablero de Comunidad</h4>
+                        <p class="text-xs text-slate-500 mt-2">Comparte anuncios generales y abre foros públicos por comisión.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-indigo-600 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Foros de Comisión &rarr;</span>
+                </a>
+
+                <!-- Mensajes -->
+                <a href="/messages" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-500 transition duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold mb-4 group-hover:bg-indigo-600 group-hover:text-white transition duration-300">
+                            💬
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-indigo-600 transition">Mensajería Privada</h4>
+                        <p class="text-xs text-slate-500 mt-2">Comunícate de manera individual y privada con tus alumnos.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-indigo-600 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Ir a Chat &rarr;</span>
+                </a>
+                {{/isDocenteRole}}
+
+
+                <!-- ADMIN MODULOS -->
+                {{#isAdminRole}}
+                <!-- Reportes Directivos -->
+                <a href="/reportes" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-green-500 transition duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center font-bold mb-4 group-hover:bg-green-600 group-hover:text-white transition duration-300">
+                            📊
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-green-600 transition">Rendimiento Educativo</h4>
+                        <p class="text-xs text-slate-500 mt-2">Dashboard de análisis para directivos. Promedios, inscripciones e indicadores clave.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-green-600 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Ver Analíticas &rarr;</span>
+                </a>
+
+                <!-- Planificacion General -->
+                <a href="/planificacion" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-500 transition duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold mb-4 group-hover:bg-blue-600 group-hover:text-white transition duration-300">
+                            ✏️
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-blue-600 transition">Materias y Comisiones</h4>
+                        <p class="text-xs text-slate-500 mt-2">Administra e inscribe materias curriculares y planifica comisiones globales.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-blue-600 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Administrar Plan &rarr;</span>
+                </a>
+
+
+                <!-- Aprobar Solicitudes -->
+                <a href="/admin/pendientes" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-rose-500 transition duration-300 flex flex-col justify-between relative overflow-hidden">
+                    {{#hasPendingUsers}}
+                    <span class="absolute top-0 right-0 bg-rose-500 text-white font-bold text-[10px] px-3 py-1 rounded-bl-xl shadow-sm animate-pulse">
+                        {{pendingUsersCount}} pendiente(s)
+                    </span>
+                    {{/hasPendingUsers}}
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold mb-4 group-hover:bg-rose-600 group-hover:text-white transition duration-300">
+                            👤
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-rose-600 transition">Aprobar Solicitudes</h4>
+                        <p class="text-xs text-slate-500 mt-2">Revisa y aprueba o rechaza solicitudes de nuevos alumnos y docentes auto-registrados.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-rose-600 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Ver Solicitudes &rarr;</span>
+                </a>
+
+                <!-- Gestión de Usuarios -->
+                <a href="/admin/usuarios" class="group bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-800 transition duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold mb-4 group-hover:bg-slate-800 group-hover:text-white transition duration-300">
+                            👥
+                        </div>
+                        <h4 class="font-bold text-slate-900 group-hover:text-slate-800 transition">Gestión de Usuarios</h4>
+                        <p class="text-xs text-slate-500 mt-2">Habilita, deshabilita y administra el estado de todas las cuentas registradas.</p>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-700 mt-6 inline-flex items-center group-hover:translate-x-1 transition-transform">Ver Usuarios &rarr;</span>
+                </a>
+                {{/isAdminRole}}
+
+            </div>
         </div>
-    </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 px-6 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p>&copy; 2026 Aula Virtual - Trabajo Integrador IS2. Todos los derechos reservados.</p>
+            <div class="flex space-x-4">
+                <a href="/dashboard" class="hover:text-indigo-600 transition">Panel</a>
+                <a href="/messages" class="hover:text-indigo-600 transition">Mensajes</a>
+                <a href="/notificaciones" class="hover:text-indigo-600 transition">Notificaciones ({{unreadNotifications}})</a>
+            </div>
+        </div>
+    </footer>
+
 </body>
 </html>
