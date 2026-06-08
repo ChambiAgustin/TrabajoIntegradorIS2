@@ -32,12 +32,13 @@ public class Person extends Model {
         set("dni", d);
     }
 
-    public int getTel(){
+    public long getTel(){
         //Lee el valor de la columna 'telefono' de la tabla 'persons'
-        return getInteger("tel");
+        Long t = getLong("tel");
+        return t == null ? 0L : t;
     }
 
-    public void setTel(int t){
+    public void setTel(long t){
         //Asigna el valor 't' a la columna 'telefono'(No la guarda en la Base de Datos)
         set("tel", t);
     }

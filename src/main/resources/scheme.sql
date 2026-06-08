@@ -23,6 +23,9 @@ CREATE TABLE users (
     password TEXT NOT NULL,          -- Contraseña hasheada (TEXT es el tipo de cadena recomendado para SQLite)
     tipo_usuario TEXT CHECK(tipo_usuario IN ('ADMIN', 'ALUMNO', 'DOCENTE')) NOT NULL,
     id_persona INTEGER UNIQUE,
+    must_change_password INTEGER NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
+    temp_password_created_at TEXT,
     FOREIGN KEY (id_persona) REFERENCES persons(id_per)
 );
 
@@ -57,7 +60,8 @@ CREATE TABLE materias(
     codigo VARCHAR(100) NOT NULL UNIQUE,
     nombre VARCHAR (100) NOT NULL,
     carga_horaria INTEGER,
-    periodo TEXT
+    periodo TEXT,
+    anio INTEGER NOT NULL DEFAULT 1
 );
 
 -- Elimina la tabla 'comisiones' si ya extiste para asegurar un inicio limpio
@@ -68,7 +72,20 @@ CREATE TABLE comisiones(
     id_comision INTEGER PRIMARY KEY AUTOINCREMENT,
     horario TEXT,
     id_materia INTEGER,
+    nombre TEXT NOT NULL DEFAULT 'Comisión 1',
     FOREIGN KEY (id_materia) REFERENCES materias(id_materia)
+);
+
+-- Elimina la tabla 'docente_materia' si ya existe
+DROP TABLE IF EXISTS docente_materia;
+
+-- Crea la tabla 'docente_materia'
+CREATE TABLE docente_materia(
+    id_prof INTEGER,
+    id_materia INTEGER,
+    PRIMARY KEY (id_prof, id_materia),
+    FOREIGN KEY (id_prof) REFERENCES professors(id_prof) ON DELETE CASCADE,
+    FOREIGN KEY (id_materia) REFERENCES materias(id_materia) ON DELETE CASCADE
 );
 
 -- Elimina la tabla 'docente_comision' si ya extiste para asegurar un inicio limpio
@@ -91,8 +108,13 @@ CREATE TABLE inscripciones(
     id_inscripcion INTEGER PRIMARY KEY AUTOINCREMENT,
     fecha TEXT,
     id_alumno INTEGER,
+    id_materia INTEGER,
     id_comision INTEGER,
+    condicion TEXT,
+    anio_lectivo INTEGER,
+    cuatrimestre TEXT,
     FOREIGN KEY (id_alumno) REFERENCES alumnos(id_alumno),
+    FOREIGN KEY (id_materia) REFERENCES materias(id_materia),
     FOREIGN KEY (id_comision) REFERENCES comisiones(id_comision)
 );
 
@@ -138,3 +160,47 @@ CREATE TABLE notificaciones(
     id_usuario INTEGER,
     FOREIGN KEY (id_usuario) REFERENCES users(id)
 );
+
+-- Elimina la tabla 'correlativas' si ya existe
+DROP TABLE IF EXISTS correlativas;
+
+-- Crea la tabla 'correlativas'
+CREATE TABLE correlativas (
+    id_materia INTEGER,
+    id_correlativa INTEGER,
+    tipo TEXT CHECK(tipo IN ('A', 'R')),
+    PRIMARY KEY (id_materia, id_correlativa),
+    FOREIGN KEY (id_materia) REFERENCES materias(id_materia) ON DELETE CASCADE,
+    FOREIGN KEY (id_correlativa) REFERENCES materias(id_materia) ON DELETE CASCADE
+);
+
+-- Elimina la tabla 'configuraciones' si ya existe para asegurar un inicio limpio
+DROP TABLE IF EXISTS configuraciones;
+
+-- Crea la tabla 'configuraciones' con los campos especificados
+CREATE TABLE configuraciones(
+    clave TEXT PRIMARY KEY,
+    valor TEXT
+);
+
+-- Insertar configuración por defecto
+INSERT INTO configuraciones (clave, valor) VALUES ('inscripcion_activa', 'true');
+INSERT INTO configuraciones (clave, valor) VALUES ('inscripcion_periodo', '1° Cuatrimestre');
+INSERT INTO configuraciones (clave, valor) VALUES ('inscripcion_anio', '2026');
+
+-- Elimina la tabla 'solicitudes_comision' si ya existe
+DROP TABLE IF EXISTS solicitudes_comision;
+
+-- Crea la tabla 'solicitudes_comision'
+CREATE TABLE solicitudes_comision(
+    id_solicitud INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_alumno INTEGER,
+    comision_solicitada TEXT NOT NULL,
+    fecha TEXT NOT NULL,
+    estado TEXT NOT NULL CHECK(estado IN ('PENDIENTE', 'APROBADO', 'RECHAZADO')),
+    anio_lectivo INTEGER NOT NULL,
+    cuatrimestre TEXT NOT NULL,
+    FOREIGN KEY (id_alumno) REFERENCES alumnos(id_alumno)
+);
+
+

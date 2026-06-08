@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carga de Notas y Evaluaciones - Aula Virtual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="bg-gradient-to-tr from-blue-600 to-indigo-600 text-white p-2 rounded-lg font-bold text-lg shadow-md shadow-blue-200">AV</span>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">Aula Virtual</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-slate-500">Conectado como <strong class="text-slate-800 font-semibold">{{currentUser}}</strong></span>
+                <a href="/dashboard" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition">Volver al Panel</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-6 flex flex-col md:flex-row gap-6">
+        
+        <!-- Sidebar: Teacher's Commissions -->
+        <section class="w-full md:w-80 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                <h2 class="font-bold text-slate-950 flex items-center space-x-2">
+                    <span>📝</span>
+                    <span>Tus Comisiones</span>
+                </h2>
+                <p class="text-[10px] text-slate-500 mt-1">Selecciona una comisión para calificar a los alumnos.</p>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-3 space-y-3">
+                {{#mySubjects}}
+                <!-- Materia Accordion / Collapsible Group -->
+                <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                    <button type="button" onclick="toggleMateriaGroup('materia-group-{{materiaId}}')" 
+                            class="w-full flex justify-between items-center px-4 py-3 bg-slate-50 hover:bg-slate-100 transition text-left font-bold text-slate-800 text-xs focus:outline-none border-b border-slate-100">
+                        <span class="truncate max-w-[170px]" title="{{materiaNombre}}">{{materiaNombre}}</span>
+                        <span id="icon-materia-group-{{materiaId}}" class="transform transition-transform duration-200 text-slate-400 {{#hasSelectedCommission}}rotate-180{{/hasSelectedCommission}}">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </span>
+                    </button>
+                    
+                    <div id="materia-group-{{materiaId}}" class="p-2 space-y-1.5 bg-white {{^hasSelectedCommission}}hidden{{/hasSelectedCommission}}">
+                        {{#comisiones}}
+                        <a href="/evaluacion?commission={{id_comision}}" 
+                           class="block p-2.5 rounded-lg border {{#selected}}border-indigo-500 bg-indigo-50/40 text-indigo-950 font-bold{{/selected}}{{^selected}}border-slate-100 hover:bg-slate-50 text-slate-700{{/selected}} transition text-[11px] shadow-sm flex flex-col space-y-0.5">
+                            <span class="font-extrabold text-[11px] text-indigo-700">{{comision_nombre}}</span>
+                            <span class="text-[9.5px] text-slate-500 font-medium">🕒 Horario: {{horario}}</span>
+                        </a>
+                        {{/comisiones}}
+                    </div>
+                </div>
+                {{/mySubjects}}
+                {{^hasSubjects}}
+                <p class="text-center text-xs text-slate-400 py-8">No dictas clases en ninguna comisión de cursada.</p>
+                {{/hasSubjects}}
+            </div>
+        </section>
+
+        <!-- Evaluation / Student Grading Table -->
+        <section class="flex-1 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col overflow-hidden">
+            {{#selectedCommissionId}}
+            <!-- Header -->
+            <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+                <h3 class="font-bold text-slate-900 text-base">Planilla de Calificaciones: {{selectedMateriaNombre}} ({{selectedComisionNombre}})</h3>
+                <p class="text-[10px] text-slate-400">Registra o actualiza las calificaciones (escala 1-10) para cada alumno matriculado.</p>
+            </div>
+
+            <!-- Alerts -->
+            <div class="px-5 pt-4">
+                {{#errorMessage}}
+                <div class="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs flex items-center space-x-2">
+                    <span>⚠️</span> <span>{{errorMessage}}</span>
+                </div>
+                {{/errorMessage}}
+
+                {{#successMessage}}
+                <div class="bg-green-50 border border-green-200 text-green-700 p-3 rounded-xl text-xs flex items-center space-x-2">
+                    <span>✓</span> <span>{{successMessage}}</span>
+                </div>
+                {{/successMessage}}
+            </div>
+
+            <!-- Student Grading Table -->
+            <div class="flex-1 overflow-x-auto p-5">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-slate-400 font-semibold uppercase tracking-wider">
+                            <th class="pb-3 font-semibold">Alumno</th>
+                            <th class="pb-3 font-semibold">DNI / Legajo</th>
+                            <th class="pb-3 font-semibold text-center">Condición</th>
+                            <th class="pb-3 font-semibold text-center">Calificación</th>
+                            <th class="pb-3 font-semibold text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {{#students}}
+                        <tr class="hover:bg-slate-50/40 transition">
+                            <td class="py-4 font-bold text-slate-900">
+                                {{apellido}}, {{nombre}}
+                            </td>
+                            <td class="py-4 text-slate-500">
+                                {{dni}}
+                            </td>
+                            <td class="py-4 text-center">
+                                <form id="grade-form-{{student_person_id}}" action="/evaluacion" method="post">
+                                    <input type="hidden" name="id_alumno" value="{{student_person_id}}">
+                                    <input type="hidden" name="id_comision" value="{{selectedCommissionId}}">
+                                </form>
+                                <select name="condicion" form="grade-form-{{student_person_id}}" onchange="toggleGradeInput('{{student_person_id}}')" id="condicion-{{student_person_id}}"
+                                        class="border border-slate-200 rounded-lg px-2 py-1 bg-white font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="" {{#is_pendiente}}selected{{/is_pendiente}}>Cursando</option>
+                                    <option value="R" {{#is_regular}}selected{{/is_regular}}>Regular (R)</option>
+                                    <option value="A" {{#is_aprobado}}selected{{/is_aprobado}}>Aprobado (A)</option>
+                                </select>
+                            </td>
+                            <td class="py-4 text-center">
+                                <input type="number" name="nota" form="grade-form-{{student_person_id}}" min="4" max="10" value="{{nota}}" id="nota-{{student_person_id}}"
+                                       {{#is_not_aprobado}}disabled{{/is_not_aprobado}}
+                                       {{#is_aprobado}}required{{/is_aprobado}}
+                                       placeholder="{{#is_not_aprobado}}-{{/is_not_aprobado}}{{^is_not_aprobado}}4-10{{/is_not_aprobado}}"
+                                       class="w-16 border border-slate-200 rounded-lg px-2 py-1 text-center font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 {{#is_not_aprobado}}bg-slate-100 text-slate-400{{/is_not_aprobado}}">
+                            </td>
+                            <td class="py-4 text-right">
+                                <button type="submit" form="grade-form-{{student_person_id}}"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-4 rounded-lg text-[10px] transition shadow-sm">
+                                    Guardar Estado
+                                </button>
+                            </td>
+                        </tr>
+                        {{/students}}
+                        {{^students}}
+                        <tr>
+                            <td colspan="4" class="text-center text-slate-400 py-12">No hay estudiantes matriculados en esta comisión.</td>
+                        </tr>
+                        {{/students}}
+                    </tbody>
+                </table>
+            </div>
+            {{/selectedCommissionId}}
+
+            {{^selectedCommissionId}}
+            <!-- Placeholder -->
+            <div class="flex-grow flex flex-col items-center justify-center p-8 text-center text-slate-400 bg-slate-50/10">
+                <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
+                    📝
+                </div>
+                <h3 class="text-base font-bold text-slate-800 mb-1">Planilla Evaluativa</h3>
+                <p class="max-w-xs text-xs">Selecciona una comisión del panel izquierdo para cargar notas a tus estudiantes.</p>
+            </div>
+            {{/selectedCommissionId}}
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 px-6 text-center text-xs text-slate-500">
+        <p>&copy; 2026 Aula Virtual - Trabajo Integrador IS2.</p>
+    </footer>
+
+    <script>
+        function toggleMateriaGroup(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            if (!content) return;
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                content.classList.add('block');
+                if (icon) icon.classList.add('rotate-180');
+            } else {
+                content.classList.remove('block');
+                content.classList.add('hidden');
+                if (icon) icon.classList.remove('rotate-180');
+            }
+        }
+
+        function toggleGradeInput(studentId) {
+            const select = document.getElementById('condicion-' + studentId);
+            const input = document.getElementById('nota-' + studentId);
+            if (!select || !input) return;
+            if (select.value === 'A') {
+                input.disabled = false;
+                input.required = true;
+                input.classList.remove('bg-slate-100', 'text-slate-400');
+                input.placeholder = "4-10";
+                if (input.value && (parseInt(input.value) < 4 || parseInt(input.value) > 10)) {
+                    input.value = "";
+                }
+            } else {
+                input.disabled = true;
+                input.required = false;
+                input.classList.add('bg-slate-100', 'text-slate-400');
+                input.value = "";
+                input.placeholder = "-";
+            }
+        }
+    </script>
+</body>
+</html>

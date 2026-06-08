@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro Público - Aula Virtual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex items-center justify-center p-6 md:p-10">
+
+    <div class="bg-white border border-slate-200 shadow-xl rounded-2xl w-full max-w-2xl overflow-hidden flex flex-col md:flex-row">
+        
+                <!-- Left Decorative Panel -->
+        <div class="md:w-1/3 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white p-8 flex flex-col justify-between">
+            <div>
+                <span class="bg-white/20 text-white px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase">Registro</span>
+                <h2 class="text-2xl font-extrabold mt-4 leading-tight">Únete a la Comunidad</h2>
+                <p class="text-xs text-indigo-100/80 mt-2 leading-relaxed">
+                    Registra tu cuenta para acceder al panel de cursada, material y foros interactivos.
+                </p>
+            </div>
+            
+            <div class="mt-8 md:mt-0 text-[10px] text-indigo-200/60 leading-relaxed border-t border-white/10 pt-4">
+                <p class="font-bold text-indigo-200">Gestión Académica</p>
+                <p class="mt-1">Las solicitudes son validadas por la administración antes de habilitar el acceso.</p>
+            </div>
+        </div>
+
+        <!-- Right Form Panel -->
+        <div class="flex-grow p-8">
+            <h1 class="text-xl font-bold text-slate-900">Crear Cuenta</h1>
+            <p class="text-xs text-slate-500 mt-1">Completa los campos. Tu solicitud será enviada al administrador.</p>
+
+            <!-- Error Alerts -->
+            {{#hasErrores}}
+            <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mt-4 text-xs space-y-1">
+                <p class="font-bold">Por favor corrige los siguientes errores:</p>
+                <ul class="list-disc list-inside">
+                    {{#errores}}
+                    <li>{{.}}</li>
+                    {{/errores}}
+                </ul>
+            </div>
+            {{/hasErrores}}
+
+            <form action="/registro" method="post" class="mt-6 space-y-4">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="nombre" class="block text-slate-700 text-xs font-semibold mb-1">Nombre</label>
+                        <input type="text" id="nombre" name="nombre" value="{{nombre}}" required
+                               class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label for="apellido" class="block text-slate-700 text-xs font-semibold mb-1">Apellido</label>
+                        <input type="text" id="apellido" name="apellido" value="{{apellido}}" required
+                               class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="email" class="block text-slate-700 text-xs font-semibold mb-1">Email / Correo Electrónico</label>
+                        <input type="email" id="email" name="email" value="{{email}}" required
+                               class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label for="dni" class="block text-slate-700 text-xs font-semibold mb-1">DNI (Sin puntos)</label>
+                        <input type="text" id="dni" name="dni" value="{{dni}}" required
+                               class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="tel" class="block text-slate-700 text-xs font-semibold mb-1">Teléfono</label>
+                        <input type="text" id="tel" name="tel" value="{{tel}}" required
+                               class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label for="direccion" class="block text-slate-700 text-xs font-semibold mb-1">Dirección</label>
+                        <input type="text" id="direccion" name="direccion" value="{{direccion}}" required
+                               class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="rol" class="block text-slate-700 text-xs font-semibold mb-1">Rol Institucional</label>
+                    <select id="rol" name="rol" required
+                            class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none transition bg-white">
+                        <option value="">Selecciona tu rol...</option>
+                        <option value="alumno" {{#rolAlumnoSelected}}selected{{/rolAlumnoSelected}}>Alumno</option>
+                        <option value="docente" {{#rolDocenteSelected}}selected{{/rolDocenteSelected}}>Docente</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="password" class="block text-slate-700 text-xs font-semibold mb-1">Contraseña</label>
+                        <input type="password" id="password" name="password" required placeholder="Mínimo 8 caracteres"
+                               class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label for="confirm_password" class="block text-slate-700 text-xs font-semibold mb-1">Confirmar Contraseña</label>
+                        <input type="password" id="confirm_password" name="confirm_password" required
+                               class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <a href="/" class="text-xs font-semibold text-slate-500 hover:text-slate-700 transition">
+                        ¿Ya tienes cuenta? Inicia sesión
+                    </a>
+                    <button type="submit"
+                            class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2.5 px-6 rounded-xl text-xs shadow-md shadow-indigo-100 transition duration-150">
+                        Enviar Solicitud
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+
+</body>
+</html>

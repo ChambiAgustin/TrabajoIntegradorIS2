@@ -5,6 +5,8 @@ import com.is1.proyecto.models.User;
 import spark.ModelAndView;
 import spark.template.mustache.MustacheTemplateEngine;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -36,14 +38,14 @@ public class MessageController {
             Object currentUserIdObj = req.session().attribute("userId");
 
             if (currentUsername == null || loggedIn == null || !loggedIn || currentUserIdObj == null) {
-                res.redirect("/?error=Debes iniciar sesión para acceder a los mensajes.");
+                res.redirect("/?error=" + URLEncoder.encode("Debes iniciar sesión para acceder a los mensajes.", StandardCharsets.UTF_8));
                 return null;
             }
 
             int currentUserId = ((Number) currentUserIdObj).intValue();
             User currentUser = User.findById(currentUserId);
             if (currentUser == null) {
-                res.redirect("/?error=Usuario no encontrado.");
+                res.redirect("/?error=" + URLEncoder.encode("Usuario no encontrado.", StandardCharsets.UTF_8));
                 return null;
             }
 
@@ -105,7 +107,7 @@ public class MessageController {
                 unreadCounts.put(cId + "-" + eId, count);
             }
 
-            String lastMsgSql = "SELECT id_comision, CASE WHEN id_emisor = ? THEN id_receptor ELSE id_emisor END as contact_id, MAX(fecha) as max_fecha FROM mensajes WHERE id_emisor = ? OR id_receptor = ? GROUP BY id_comision, contact_id";
+            String lastMsgSql = "SELECT id_comision, CASE WHEN id_emisor = ? THEN id_receptor ELSE id_emisor END as contact_id, MAX(fecha) as max_fecha FROM mensajes WHERE (id_emisor = ? OR id_receptor = ?) AND id_receptor IS NOT NULL GROUP BY id_comision, contact_id";
             List<Map> lastMsgRows = Base.findAll(lastMsgSql, currentUserId, currentUserId, currentUserId);
             Map<String, String> lastMessageDates = new HashMap<>();
             for (Map mRow : lastMsgRows) {
@@ -300,7 +302,7 @@ public class MessageController {
 
             if (currentUsername == null || loggedIn == null || !loggedIn || currentUserIdObj == null) {
                 res.status(401);
-                res.redirect("/?error=Sesión expirada.");
+                res.redirect("/?error=" + URLEncoder.encode("Sesión expirada.", StandardCharsets.UTF_8));
                 return "";
             }
 
@@ -308,7 +310,7 @@ public class MessageController {
             User currentUser = User.findById(currentUserId);
             if (currentUser == null) {
                 res.status(404);
-                res.redirect("/?error=Usuario no encontrado.");
+                res.redirect("/?error=" + URLEncoder.encode("Usuario no encontrado.", StandardCharsets.UTF_8));
                 return "";
             }
 
@@ -322,7 +324,7 @@ public class MessageController {
             if (idReceptorStr == null || idReceptorStr.isEmpty() || contenido == null || contenido.trim().isEmpty()
                     || idComisionStr == null || idComisionStr.isEmpty()) {
                 res.status(400);
-                res.redirect("/messages?error=El contenido, el receptor y la comisión son requeridos.");
+                res.redirect("/messages?error=" + URLEncoder.encode("El contenido, el receptor y la comisión son requeridos.", StandardCharsets.UTF_8));
                 return "";
             }
 
@@ -333,7 +335,7 @@ public class MessageController {
                 idComision = Integer.parseInt(idComisionStr);
             } catch (NumberFormatException e) {
                 res.status(400);
-                res.redirect("/messages?error=Receptor o comisión inválidos.");
+                res.redirect("/messages?error=" + URLEncoder.encode("Receptor o comisión inválidos.", StandardCharsets.UTF_8));
                 return "";
             }
 
@@ -341,7 +343,7 @@ public class MessageController {
             User receptor = User.findById(idReceptor);
             if (receptor == null) {
                 res.status(404);
-                res.redirect("/messages?error=El destinatario no existe.");
+                res.redirect("/messages?error=" + URLEncoder.encode("El destinatario no existe.", StandardCharsets.UTF_8));
                 return "";
             }
 
@@ -352,15 +354,15 @@ public class MessageController {
             // - Si el emisor es DOCENTE, el receptor debe ser ALUMNO
             if ("ALUMNO".equals(userRole) && !"DOCENTE".equals(receptorRole)) {
                 res.status(403);
-                res.redirect("/messages?error=Los alumnos solo pueden enviar mensajes a docentes.");
+                res.redirect("/messages?error=" + URLEncoder.encode("Los alumnos solo pueden enviar mensajes a docentes.", StandardCharsets.UTF_8));
                 return "";
             } else if ("DOCENTE".equals(userRole) && !"ALUMNO".equals(receptorRole)) {
                 res.status(403);
-                res.redirect("/messages?error=Los docentes solo pueden responder a alumnos.");
+                res.redirect("/messages?error=" + URLEncoder.encode("Los docentes solo pueden responder a alumnos.", StandardCharsets.UTF_8));
                 return "";
             } else if (!"ALUMNO".equals(userRole) && !"DOCENTE".equals(userRole)) {
                 res.status(403);
-                res.redirect("/messages?error=Rol no autorizado para mensajería.");
+                res.redirect("/messages?error=" + URLEncoder.encode("Rol no autorizado para mensajería.", StandardCharsets.UTF_8));
                 return "";
             }
 
@@ -390,7 +392,7 @@ public class MessageController {
 
             if (!compartenComision) {
                 res.status(403);
-                res.redirect("/messages?error=No tienes permitido enviar mensajes en esta comisión.");
+                res.redirect("/messages?error=" + URLEncoder.encode("No tienes permitido enviar mensajes en esta comisión.", StandardCharsets.UTF_8));
                 return "";
             }
 
@@ -415,7 +417,7 @@ public class MessageController {
                 e.printStackTrace();
                 res.status(500);
                 res.redirect("/messages?with=" + idReceptor + "&commission=" + idComision
-                        + "&error=Error interno al enviar el mensaje.");
+                        + "&error=" + URLEncoder.encode("Error interno al enviar el mensaje.", StandardCharsets.UTF_8));
                 return "";
             }
         });
